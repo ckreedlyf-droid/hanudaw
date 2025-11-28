@@ -13,7 +13,7 @@ const genres = [
   { value: "boomer", label: "Boomer" }
 ];
 
-// ---------- WORD LISTS ----------
+// ---------- WORD LISTS (shared across genres per level) ----------
 
 // easy
 const easyVerbs = [
@@ -84,7 +84,7 @@ const hardSubjects = [
   "bug", "glitch", "update", "patch", "feed"
 ];
 
-// ---------- GENRE FILTERS ----------
+// ---------- GENRE "PREFERRED WORDS" (used as weights) ----------
 
 const genreVerbMap = {
   couples: new Set([
@@ -167,12 +167,19 @@ function getRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function filterByGenre(base, genreValue, map) {
+// instead of hard filter, genre words get WEIGHTED (mas madalas lumabas pero hindi lang sila)
+function getWeightedPool(base, genreValue, map) {
   if (genreValue === "all") return base;
   const set = map[genreValue];
   if (!set) return base;
-  const filtered = base.filter((word) => set.has(word));
-  return filtered.length ? filtered : base;
+
+  const inGenre = base.filter((w) => set.has(w));
+  const outGenre = base.filter((w) => !set.has(w));
+
+  if (!inGenre.length) return base;
+
+  // triple the in-genre items para mas mataas chance
+  return [...inGenre, ...inGenre, ...inGenre, ...outGenre];
 }
 
 function getRandomCardBg() {
@@ -181,9 +188,12 @@ function getRandomCardBg() {
   return `linear-gradient(135deg, hsl(${hue} 80% 15%), hsl(${hue2} 80% 25%))`;
 }
 
-function getRandomWordBg() {
+function getRandomWordStyle() {
   const hue = Math.floor(Math.random() * 360);
-  return `hsl(${hue} 85% 35%)`;
+  const lightness = 35 + Math.random() * 30; // 35–65
+  const bg = `hsl(${hue} 85% ${lightness}%)`;
+  const color = lightness > 55 ? "#111827" : "#f9fafb"; // auto-contrast
+  return { bg, color };
 }
 
 // ---------- COMPONENT ----------
@@ -200,8 +210,8 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [cardBg, setCardBg] = useState(getRandomCardBg());
-  const [verbBg, setVerbBg] = useState(getRandomWordBg());
-  const [subjectBg, setSubjectBg] = useState(getRandomWordBg());
+  const [verbStyle, setVerbStyle] = useState(getRandomWordStyle());
+  const [subjectStyle, setSubjectStyle] = useState(getRandomWordStyle());
 
   const spinIntervalRef = useRef(null);
   const spinTimeoutRef = useRef(null);
@@ -213,7 +223,7 @@ export default function Home() {
     };
   }, []);
 
-  const { currentVerbs, currentSubjects } = useMemo(() => {
+  const { verbPool, subjectPool } = useMemo(() => {
     let baseVerbs = easyVerbs;
     let baseSubjects = easySubjects;
 
@@ -225,25 +235,25 @@ export default function Home() {
       baseSubjects = hardSubjects;
     }
 
-    const verbs = filterByGenre(baseVerbs, genre, genreVerbMap);
-    const subjects = filterByGenre(baseSubjects, genre, genreSubjectMap);
+    const verbs = getWeightedPool(baseVerbs, genre, genreVerbMap);
+    const subjects = getWeightedPool(baseSubjects, genre, genreSubjectMap);
 
-    return { currentVerbs: verbs, currentSubjects: subjects };
+    return { verbPool: verbs, subjectPool: subjects };
   }, [level, genre]);
 
   const shuffle = () => {
     if (isSpinning) return;
-    if (!currentVerbs.length || !currentSubjects.length) return;
+    if (!verbPool.length || !subjectPool.length) return;
 
-    const finalVerb = getRandom(currentVerbs);
-    const finalSubject = getRandom(currentSubjects);
+    const finalVerb = getRandom(verbPool);
+    const finalSubject = getRandom(subjectPool);
 
     setIsSpinning(true);
     setCopied(false);
 
     spinIntervalRef.current = setInterval(() => {
-      setDisplayVerb(getRandom(currentVerbs));
-      setDisplaySubject(getRandom(currentSubjects));
+      setDisplayVerb(getRandom(verbPool));
+      setDisplaySubject(getRandom(subjectPool));
     }, 70);
 
     spinTimeoutRef.current = setTimeout(() => {
@@ -255,8 +265,8 @@ export default function Home() {
       setDisplaySubject(finalSubject);
       setIsSpinning(false);
       setCardBg(getRandomCardBg());
-      setVerbBg(getRandomWordBg());
-      setSubjectBg(getRandomWordBg());
+      setVerbStyle(getRandomWordStyle());
+      setSubjectStyle(getRandomWordStyle());
     }, 800);
   };
 
@@ -266,7 +276,6 @@ export default function Home() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
-      console.error("Failed to copy:", err);
     }
   };
 
@@ -280,8 +289,6 @@ export default function Home() {
     background: active ? "#0f172a" : "#ffffff",
     color: active ? "#f9fafb" : "#4b5563"
   });
-
-  const phrase = `${verb} ${subject}`;
 
   return (
     <>
@@ -418,30 +425,30 @@ export default function Home() {
               transition: "background 0.3s ease"
             }}
           >
-            {/* word boxes */}
+            {/* slot-style squares */}
             <div
               style={{
                 display: "flex",
-                gap: "0.6rem",
+                gap: "0.2rem",
                 justifyContent: "center",
                 marginBottom: "0.75rem",
                 flexWrap: "wrap"
               }}
             >
               <div
-                className={isSpinning ? "word-box rolling" : "word-box"}
+                className={isSpinning ? "word-box slot-rolling" : "word-box"}
                 style={{
-                  background: verbBg,
-                  color: "#f9fafb"
+                  background: verbStyle.bg,
+                  color: verbStyle.color
                 }}
               >
                 {displayVerb}
               </div>
               <div
-                className={isSpinning ? "word-box rolling" : "word-box"}
+                className={isSpinning ? "word-box slot-rolling" : "word-box"}
                 style={{
-                  background: subjectBg,
-                  color: "#f9fafb"
+                  background: subjectStyle.bg,
+                  color: subjectStyle.color
                 }}
               >
                 {displaySubject}
@@ -522,37 +529,36 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Rolling animation styles */}
+      {/* slot-machine animation */}
       <style jsx>{`
         .word-box {
-          min-width: 110px;
-          padding: 0.35rem 0.9rem;
-          border-radius: 999px;
+          width: 150px;
+          height: 150px;
+          border-radius: 0px;
+          display: flex;
+          align-items: center;
+          justifyContent: center;
           font-size: 1.6rem;
           font-weight: 800;
           text-transform: lowercase;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 8px 20px rgba(15, 23, 42, 0.45);
         }
 
-        .rolling {
-          animation: roll 0.4s linear infinite;
+        .slot-rolling {
+          animation: slot-spin 0.25s linear infinite;
         }
 
-        @keyframes roll {
+        @keyframes slot-spin {
           0% {
-            transform: translateY(0);
-            opacity: 1;
+            transform: translateY(25px);
+            opacity: 0.8;
           }
           50% {
-            transform: translateY(-10px);
-            opacity: 0.6;
+            transform: translateY(-25px);
+            opacity: 1;
           }
           100% {
-            transform: translateY(0);
-            opacity: 1;
+            transform: translateY(25px);
+            opacity: 0.8;
           }
         }
       `}</style>
