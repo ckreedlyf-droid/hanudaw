@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 const genres = [
   { value: "all", label: "All" },
@@ -84,13 +84,105 @@ const hardSubjects = [
   "bug", "glitch", "update", "patch", "feed"
 ];
 
+// ─── GENRE FILTER MAPS ──────────────────────────
+
+const genreVerbMap = {
+  couples: new Set([
+    "love", "yakap", "halik", "lambing", "asikaso",
+    "alaga", "aruga", "kulitan", "tiis", "intindi",
+    "unawa", "tanggap", "salo", "ipagluto", "ipagkape",
+    "makinig", "usap", "protect", "defend", "date",
+    "harana", "surprise", "yakap-tight", "remind", "support"
+  ]),
+  kids: new Set([
+    "kain", "inom", "tulog", "gising", "laro",
+    "takbo", "sayaw", "kanta", "basa", "sulat",
+    "kulitan", "asar", "tukso", "cheer"
+  ]),
+  christian: new Set([
+    "pray", "kanta", "encourage", "support", "comfort",
+    "advise", "unawa", "tanggap", "protect", "share",
+    "basa", "sulat", "organize", "mentor"
+  ]),
+  social: new Set([
+    "text", "tawag", "chat", "react", "share",
+    "comment", "follow", "send", "screenshot", "screenrecord",
+    "subtweet", "spill", "lurk", "flex", "spam",
+    "double-text", "triple-text", "remix"
+  ]),
+  genz: new Set([
+    "flex", "doomscroll", "overthink", "panic-buy", "ubos-salary",
+    "ghost", "seenzone", "block", "unfollow", "paasa",
+    "spam", "double-text", "triple-text", "remix", "cringe"
+  ]),
+  millennial: new Set([
+    "budget", "ipon", "bayad", "invest", "plan",
+    "organize", "hatid", "sundo", "pray", "work"
+  ]),
+  boomer: new Set([
+    "tawag", "text", "hatid", "sundo", "walis",
+    "laba", "hugas", "linis", "ligo", "ayos",
+    "sermon", "advise", "pray", "bantay", "alaga"
+  ])
+};
+
+const genreSubjectMap = {
+  couples: new Set([
+    "puso", "pisngi", "buhok", "mata", "feelings",
+    "emotions", "tampuhan", "lambing", "tiwala", "pangarap",
+    "oras", "pasensya", "status", "story", "goal",
+    "habit", "routine", "secret"
+  ]),
+  kids: new Set([
+    "paa", "kamay", "ulo", "tinapay", "kanin",
+    "ulam", "laro", "gutom", "antok"
+  ]),
+  christian: new Set([
+    "puso", "feelings", "konsensya", "ego", "pride",
+    "lesson", "habit", "routine", "pangarap", "goal"
+  ]),
+  social: new Set([
+    "message", "inbox", "notification", "account", "profile",
+    "status", "story", "feed", "reaction", "comment",
+    "like", "share", "meme", "drama"
+  ]),
+  genz: new Set([
+    "crush", "situationship", "delulu", "fantasy", "rizz",
+    "aura", "vibes", "mid", "meme", "cringe"
+  ]),
+  millennial: new Set([
+    "sweldo", "budget", "ipon", "gastos", "utang",
+    "resibo", "deadline", "project", "task", "kape",
+    "status"
+  ]),
+  boomer: new Set([
+    "wallet", "keys", "resibo", "payong", "baon",
+    "allowance", "sweldo", "utang", "drama"
+  ])
+};
+
 // ─── HELPERS ─────────────────────────────────────
 
 function getRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// genre is decorative for now (no filter yet, para less bug-prone)
+function filterByGenre(base, genreValue, map) {
+  if (genreValue === "all") return base;
+  const set = map[genreValue];
+  if (!set) return base;
+  const filtered = base.filter((word) => set.has(word));
+  return filtered.length ? filtered : base; // kung walang match, balik full list
+}
+
+function getRandomCardBg() {
+  const hue = Math.floor(Math.random() * 360);
+  const hue2 = (hue + 40) % 360;
+  // dark gradient; light text always readable
+  return `linear-gradient(135deg, hsl(${hue} 80% 15%), hsl(${hue2} 80% 25%))`;
+}
+
+// ─── COMPONENT ───────────────────────────────────
 
 export default function Home() {
   const [genre, setGenre] = useState("all");
@@ -103,6 +195,7 @@ export default function Home() {
 
   const [copied, setCopied] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [cardBg, setCardBg] = useState(getRandomCardBg());
 
   const spinIntervalRef = useRef(null);
   const spinTimeoutRef = useRef(null);
@@ -114,38 +207,39 @@ export default function Home() {
     };
   }, []);
 
-  const getPools = () => {
-    let verbs = easyVerbs;
-    let subjects = easySubjects;
+  const { currentVerbs, currentSubjects } = useMemo(() => {
+    let baseVerbs = easyVerbs;
+    let baseSubjects = easySubjects;
 
     if (level === "medium") {
-      verbs = mediumVerbs;
-      subjects = mediumSubjects;
+      baseVerbs = mediumVerbs;
+      baseSubjects = mediumSubjects;
     } else if (level === "hard") {
-      verbs = hardVerbs;
-      subjects = hardSubjects;
+      baseVerbs = hardVerbs;
+      baseSubjects = hardSubjects;
     }
 
-    return { verbs, subjects };
-  };
+    const verbs = filterByGenre(baseVerbs, genre, genreVerbMap);
+    const subjects = filterByGenre(baseSubjects, genre, genreSubjectMap);
+
+    return { currentVerbs: verbs, currentSubjects: subjects };
+  }, [level, genre]);
 
   const phrase = `${displayVerb} ${displaySubject}`;
 
   const shuffle = () => {
     if (isSpinning) return;
+    if (!currentVerbs.length || !currentSubjects.length) return;
 
-    const { verbs, subjects } = getPools();
-    if (!verbs.length || !subjects.length) return;
-
-    const finalVerb = getRandom(verbs);
-    const finalSubject = getRandom(subjects);
+    const finalVerb = getRandom(currentVerbs);
+    const finalSubject = getRandom(currentSubjects);
 
     setIsSpinning(true);
     setCopied(false);
 
     spinIntervalRef.current = setInterval(() => {
-      setDisplayVerb(getRandom(verbs));
-      setDisplaySubject(getRandom(subjects));
+      setDisplayVerb(getRandom(currentVerbs));
+      setDisplaySubject(getRandom(currentSubjects));
     }, 60);
 
     spinTimeoutRef.current = setTimeout(() => {
@@ -155,6 +249,7 @@ export default function Home() {
       setDisplayVerb(finalVerb);
       setDisplaySubject(finalSubject);
       setIsSpinning(false);
+      setCardBg(getRandomCardBg());
     }, 700);
   };
 
@@ -185,7 +280,7 @@ export default function Home() {
         minHeight: "100vh",
         background:
           "linear-gradient(135deg, #f97316 0%, #ec4899 40%, #6366f1 100%)",
-        display: "fxlex",
+        display: "flex",
         justifyContent: "center",
         alignItems: "center",
         padding: "1.5rem",
@@ -300,7 +395,8 @@ export default function Home() {
             padding: "1.75rem 1.25rem",
             marginBottom: "1.25rem",
             textAlign: "center",
-            background: "#0f172a"
+            background: cardBg,
+            transition: "background 0.3s ease"
           }}
         >
           <div
