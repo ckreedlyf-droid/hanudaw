@@ -13,9 +13,9 @@ const genres = [
   { value: "boomer", label: "Boomer" }
 ];
 
-// ─── WORD LISTS ──────────────────────────────────
+// ---------- WORD LISTS ----------
 
-// easy verbs / subjects
+// easy
 const easyVerbs = [
   "laba", "hugas", "linis", "ayos", "tiklop",
   "timpla", "kain", "inom", "tulog", "gising",
@@ -38,7 +38,7 @@ const easySubjects = [
   "tsinelas", "bag", "payong", "wallet", "cellphone"
 ];
 
-// medium verbs / subjects
+// medium
 const mediumVerbs = [
   "kulitan", "asar", "tukso", "tiis", "intindi",
   "unawa", "tanggap", "salo", "buhat", "hatak",
@@ -61,7 +61,7 @@ const mediumSubjects = [
   "victory", "lesson", "habit", "routine", "secret"
 ];
 
-// hard verbs / subjects
+// hard
 const hardVerbs = [
   "screenshot", "screenrecord", "stalk", "ghost", "seenzone",
   "block", "unfollow", "mute", "react", "rant",
@@ -84,7 +84,7 @@ const hardSubjects = [
   "bug", "glitch", "update", "patch", "feed"
 ];
 
-// ─── GENRE FILTER MAPS ──────────────────────────
+// ---------- GENRE FILTERS ----------
 
 const genreVerbMap = {
   couples: new Set([
@@ -161,7 +161,7 @@ const genreSubjectMap = {
   ])
 };
 
-// ─── HELPERS ─────────────────────────────────────
+// ---------- HELPERS ----------
 
 function getRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -172,17 +172,21 @@ function filterByGenre(base, genreValue, map) {
   const set = map[genreValue];
   if (!set) return base;
   const filtered = base.filter((word) => set.has(word));
-  return filtered.length ? filtered : base; // kung walang match, balik full list
+  return filtered.length ? filtered : base;
 }
 
 function getRandomCardBg() {
   const hue = Math.floor(Math.random() * 360);
   const hue2 = (hue + 40) % 360;
-  // dark gradient; light text always readable
   return `linear-gradient(135deg, hsl(${hue} 80% 15%), hsl(${hue2} 80% 25%))`;
 }
 
-// ─── COMPONENT ───────────────────────────────────
+function getRandomWordBg() {
+  const hue = Math.floor(Math.random() * 360);
+  return `hsl(${hue} 85% 35%)`;
+}
+
+// ---------- COMPONENT ----------
 
 export default function Home() {
   const [genre, setGenre] = useState("all");
@@ -196,6 +200,8 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [cardBg, setCardBg] = useState(getRandomCardBg());
+  const [verbBg, setVerbBg] = useState(getRandomWordBg());
+  const [subjectBg, setSubjectBg] = useState(getRandomWordBg());
 
   const spinIntervalRef = useRef(null);
   const spinTimeoutRef = useRef(null);
@@ -225,8 +231,6 @@ export default function Home() {
     return { currentVerbs: verbs, currentSubjects: subjects };
   }, [level, genre]);
 
-  const phrase = `${displayVerb} ${displaySubject}`;
-
   const shuffle = () => {
     if (isSpinning) return;
     if (!currentVerbs.length || !currentSubjects.length) return;
@@ -240,17 +244,20 @@ export default function Home() {
     spinIntervalRef.current = setInterval(() => {
       setDisplayVerb(getRandom(currentVerbs));
       setDisplaySubject(getRandom(currentSubjects));
-    }, 60);
+    }, 70);
 
     spinTimeoutRef.current = setTimeout(() => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
+
       setVerb(finalVerb);
       setSubject(finalSubject);
       setDisplayVerb(finalVerb);
       setDisplaySubject(finalSubject);
       setIsSpinning(false);
       setCardBg(getRandomCardBg());
-    }, 700);
+      setVerbBg(getRandomWordBg());
+      setSubjectBg(getRandomWordBg());
+    }, 800);
   };
 
   const copyToClipboard = async () => {
@@ -264,225 +271,291 @@ export default function Home() {
   };
 
   const levelButtonStyle = (active) => ({
-    padding: "0.35rem 0.9rem",
+    padding: "0.4rem 1rem",
     borderRadius: 999,
     border: active ? "none" : "1px solid #e5e7eb",
-    fontSize: "0.75rem",
+    fontSize: "0.8rem",
     fontWeight: 600,
     cursor: "pointer",
     background: active ? "#0f172a" : "#ffffff",
     color: active ? "#f9fafb" : "#4b5563"
   });
 
+  const phrase = `${verb} ${subject}`;
+
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #f97316 0%, #ec4899 40%, #6366f1 100%)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "1.5rem",
-        fontFamily:
-          "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
-      }}
-    >
-      <div
+    <>
+      <main
         style={{
-          maxWidth: 540,
-          width: "100%",
-          background: "rgba(255,255,255,0.96)",
-          borderRadius: 24,
-          padding: "1.75rem 1.5rem 1.5rem",
-          boxShadow: "0 20px 40px rgba(15, 23, 42, 0.25)"
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg, #f97316 0%, #ec4899 40%, #6366f1 100%)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "1.5rem",
+          fontFamily:
+            "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
         }}
       >
-        {/* Top bar */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "1rem"
+            maxWidth: 540,
+            width: "100%",
+            background: "rgba(255,255,255,0.96)",
+            borderRadius: 24,
+            padding: "1.75rem 1.5rem 1.5rem",
+            boxShadow: "0 20px 40px rgba(15, 23, 42, 0.25)"
           }}
         >
-          <div style={{ fontWeight: 800, fontSize: "1.1rem" }}>
-            Hanu Daw? 🤯
-          </div>
+          {/* Title */}
           <div
             style={{
-              fontSize: "0.75rem",
-              color: "#6b7280"
+              textAlign: "center",
+              marginBottom: "1.25rem"
             }}
           >
-            Taglish mashup generator
-          </div>
-        </div>
-
-        {/* Genre + Level controls */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.75rem",
-            marginBottom: "1rem"
-          }}
-        >
-          <div style={{ flex: "1 1 140px" }}>
             <div
               style={{
-                fontSize: "0.7rem",
-                color: "#6b7280",
-                marginBottom: "0.25rem"
+                fontWeight: 900,
+                fontSize: "1.7rem",
+                letterSpacing: "0.03em",
+                background:
+                  "linear-gradient(120deg, #f97316, #ec4899, #6366f1)",
+                WebkitBackgroundClip: "text",
+                color: "transparent"
               }}
             >
-              Genre
+              Hanu Daw? 🤯
             </div>
-            <select
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
+            <div
               style={{
-                width: "100%",
-                borderRadius: 999,
-                border: "1px solid #e5e7eb",
-                padding: "0.4rem 0.75rem",
                 fontSize: "0.8rem",
-                background: "#ffffff"
+                color: "#6b7280",
+                marginTop: "0.25rem"
               }}
             >
-              {genres.map((g) => (
-                <option key={g.value} value={g.value}>
-                  {g.label}
-                </option>
-              ))}
-            </select>
+              Taglish mashup generator para sa mga walang kausap sa gabi. 😆
+            </div>
           </div>
 
+          {/* Genre + Level controls */}
           <div
             style={{
               display: "flex",
-              gap: "0.4rem",
-              alignItems: "flex-end",
-              flexWrap: "wrap"
+              flexWrap: "wrap",
+              gap: "0.75rem",
+              marginBottom: "1.25rem"
             }}
           >
-            <button
-              style={levelButtonStyle(level === "easy")}
-              onClick={() => setLevel("easy")}
-            >
-              Easy
-            </button>
-            <button
-              style={levelButtonStyle(level === "medium")}
-              onClick={() => setLevel("medium")}
-            >
-              Medium
-            </button>
-            <button
-              style={levelButtonStyle(level === "hard")}
-              onClick={() => setLevel("hard")}
-            >
-              Hard
-            </button>
-          </div>
-        </div>
+            <div style={{ flex: "1 1 140px" }}>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "#6b7280",
+                  marginBottom: "0.25rem"
+                }}
+              >
+                Genre
+              </div>
+              <select
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                style={{
+                  width: "100%",
+                  borderRadius: 999,
+                  border: "1px solid #e5e7eb",
+                  padding: "0.45rem 0.75rem",
+                  fontSize: "0.8rem",
+                  background: "#ffffff"
+                }}
+              >
+                {genres.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Phrase card */}
-        <div
-          style={{
-            borderRadius: 20,
-            padding: "1.75rem 1.25rem",
-            marginBottom: "1.25rem",
-            textAlign: "center",
-            background: cardBg,
-            transition: "background 0.3s ease"
-          }}
-        >
+            <div
+              style={{
+                display: "flex",
+                gap: "0.4rem",
+                alignItems: "flex-end",
+                flexWrap: "wrap"
+              }}
+            >
+              <button
+                style={levelButtonStyle(level === "easy")}
+                onClick={() => setLevel("easy")}
+              >
+                Easy
+              </button>
+              <button
+                style={levelButtonStyle(level === "medium")}
+                onClick={() => setLevel("medium")}
+              >
+                Medium
+              </button>
+              <button
+                style={levelButtonStyle(level === "hard")}
+                onClick={() => setLevel("hard")}
+              >
+                Hard
+              </button>
+            </div>
+          </div>
+
+          {/* Phrase card */}
           <div
             style={{
-              fontSize: "2.1rem",
-              fontWeight: 800,
-              color: "#f9fafb",
-              wordBreak: "break-word",
-              lineHeight: 1.1
+              borderRadius: 20,
+              padding: "1.6rem 1.25rem",
+              marginBottom: "1.25rem",
+              textAlign: "center",
+              background: cardBg,
+              transition: "background 0.3s ease"
             }}
           >
-            {phrase}
+            {/* word boxes */}
+            <div
+              style={{
+                display: "flex",
+                gap: "0.6rem",
+                justifyContent: "center",
+                marginBottom: "0.75rem",
+                flexWrap: "wrap"
+              }}
+            >
+              <div
+                className={isSpinning ? "word-box rolling" : "word-box"}
+                style={{
+                  background: verbBg,
+                  color: "#f9fafb"
+                }}
+              >
+                {displayVerb}
+              </div>
+              <div
+                className={isSpinning ? "word-box rolling" : "word-box"}
+                style={{
+                  background: subjectBg,
+                  color: "#f9fafb"
+                }}
+              >
+                {displaySubject}
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontSize: "0.8rem",
+                color: "#e5e7eb",
+                marginBottom: "0.25rem"
+              }}
+            >
+              Verb: <b>{verb}</b> • Subject: <b>{subject}</b>
+            </div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "#e5e7eb"
+              }}
+            >
+              Genre: <b>{genres.find((g) => g.value === genre)?.label}</b> ·
+              Level: <b>{level.toUpperCase()}</b>
+            </div>
           </div>
+
+          {/* Buttons */}
           <div
-            style={{
-              marginTop: "0.75rem",
-              fontSize: "0.8rem",
-              color: "#e5e7eb"
-            }}
+            style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
           >
-            Verb: <b>{verb}</b> • Subject: <b>{subject}</b>
+            <button
+              onClick={shuffle}
+              disabled={isSpinning}
+              style={{
+                border: "none",
+                borderRadius: 999,
+                padding: "0.85rem 1rem",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                background: isSpinning
+                  ? "#9ca3af"
+                  : "linear-gradient(135deg, #f97316 0%, #ec4899 50%, #6366f1 100%)",
+                color: "#f9fafb",
+                cursor: isSpinning ? "not-allowed" : "pointer"
+              }}
+            >
+              {isSpinning ? "Nagro-roll..." : "Hanu daw ulit? 🔁"}
+            </button>
+
+            <button
+              onClick={copyToClipboard}
+              style={{
+                borderRadius: 999,
+                padding: "0.75rem 1rem",
+                fontSize: "0.9rem",
+                fontWeight: 500,
+                border: "1px solid #e5e7eb",
+                background: "#ffffff",
+                color: "#111827",
+                cursor: "pointer"
+              }}
+            >
+              {copied ? "Kinopya na! ✅" : "Copy sa clipboard 📋"}
+            </button>
           </div>
+
+          {/* Footer */}
           <div
             style={{
-              marginTop: "0.35rem",
+              marginTop: "0.9rem",
               fontSize: "0.7rem",
-              color: "#e5e7eb"
+              color: "#6b7280",
+              textAlign: "center"
             }}
           >
-            Genre: <b>{genres.find((g) => g.value === genre)?.label}</b> · Level:{" "}
-            <b>{level.toUpperCase()}</b>
+            Pang-couple, pang-kids, pang-DGroup icebreaker. 😆
           </div>
         </div>
+      </main>
 
-        {/* Buttons */}
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
-        >
-          <button
-            onClick={shuffle}
-            disabled={isSpinning}
-            style={{
-              border: "none",
-              borderRadius: 999,
-              padding: "0.8rem 1rem",
-              fontSize: "0.95rem",
-              fontWeight: 600,
-              background: isSpinning
-                ? "#9ca3af"
-                : "linear-gradient(135deg, #f97316 0%, #ec4899 50%, #6366f1 100%)",
-              color: "#f9fafb",
-              cursor: isSpinning ? "not-allowed" : "pointer"
-            }}
-          >
-            {isSpinning ? "Nagro-roll..." : "Hanu daw ulit? 🔁"}
-          </button>
+      {/* Rolling animation styles */}
+      <style jsx>{`
+        .word-box {
+          min-width: 110px;
+          padding: 0.35rem 0.9rem;
+          border-radius: 999px;
+          font-size: 1.6rem;
+          font-weight: 800;
+          text-transform: lowercase;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 8px 20px rgba(15, 23, 42, 0.45);
+        }
 
-          <button
-            onClick={copyToClipboard}
-            style={{
-              borderRadius: 999,
-              padding: "0.75rem 1rem",
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              border: "1px solid #e5e7eb",
-              background: "#ffffff",
-              color: "#111827",
-              cursor: "pointer"
-            }}
-          >
-            {copied ? "Kinopya na! ✅" : "Copy sa clipboard 📋"}
-          </button>
-        </div>
+        .rolling {
+          animation: roll 0.4s linear infinite;
+        }
 
-        {/* Footer */}
-        <div
-          style={{
-            marginTop: "0.9rem",
-            fontSize: "0.7rem",
-            color: "#6b7280",
-            textAlign: "center"
-          }}
-        >
-          Pang-couple, pang-kids, pang-DGroup icebreaker. 😆
-        </div>
-      </div>
-    </main>
+        @keyframes roll {
+          0% {
+            transform: translateY(0);
+            opacity: 1;
+          }
+          50% {
+            transform: translateY(-10px);
+            opacity: 0.6;
+          }
+          100% {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </>
   );
 }
