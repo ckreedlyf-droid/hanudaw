@@ -13,9 +13,8 @@ const genres = [
   { value: "boomer", label: "Boomer" }
 ];
 
-// ---------- WORD LISTS (shared across genres per level) ----------
+// ---------- WORD LISTS (by level, shared across genres) ----------
 
-// easy
 const easyVerbs = [
   "laba", "hugas", "linis", "ayos", "tiklop",
   "timpla", "kain", "inom", "tulog", "gising",
@@ -38,7 +37,6 @@ const easySubjects = [
   "tsinelas", "bag", "payong", "wallet", "cellphone"
 ];
 
-// medium
 const mediumVerbs = [
   "kulitan", "asar", "tukso", "tiis", "intindi",
   "unawa", "tanggap", "salo", "buhat", "hatak",
@@ -61,7 +59,6 @@ const mediumSubjects = [
   "victory", "lesson", "habit", "routine", "secret"
 ];
 
-// hard
 const hardVerbs = [
   "screenshot", "screenrecord", "stalk", "ghost", "seenzone",
   "block", "unfollow", "mute", "react", "rant",
@@ -84,7 +81,7 @@ const hardSubjects = [
   "bug", "glitch", "update", "patch", "feed"
 ];
 
-// ---------- GENRE "PREFERRED WORDS" (used as weights) ----------
+// ---------- GENRE WEIGHTS (favored words per genre) ----------
 
 const genreVerbMap = {
   couples: new Set([
@@ -167,7 +164,7 @@ function getRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// instead of hard filter, genre words get WEIGHTED (mas madalas lumabas pero hindi lang sila)
+// Genre = weighted, hindi hard filter
 function getWeightedPool(base, genreValue, map) {
   if (genreValue === "all") return base;
   const set = map[genreValue];
@@ -178,21 +175,14 @@ function getWeightedPool(base, genreValue, map) {
 
   if (!inGenre.length) return base;
 
-  // triple the in-genre items para mas mataas chance
   return [...inGenre, ...inGenre, ...inGenre, ...outGenre];
-}
-
-function getRandomCardBg() {
-  const hue = Math.floor(Math.random() * 360);
-  const hue2 = (hue + 40) % 360;
-  return `linear-gradient(135deg, hsl(${hue} 80% 15%), hsl(${hue2} 80% 25%))`;
 }
 
 function getRandomWordStyle() {
   const hue = Math.floor(Math.random() * 360);
-  const lightness = 35 + Math.random() * 30; // 35–65
+  const lightness = 40 + Math.random() * 20; // 40–60
   const bg = `hsl(${hue} 85% ${lightness}%)`;
-  const color = lightness > 55 ? "#111827" : "#f9fafb"; // auto-contrast
+  const color = lightness > 55 ? "#111827" : "#f9fafb";
   return { bg, color };
 }
 
@@ -209,7 +199,6 @@ export default function Home() {
 
   const [copied, setCopied] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [cardBg, setCardBg] = useState(getRandomCardBg());
   const [verbStyle, setVerbStyle] = useState(getRandomWordStyle());
   const [subjectStyle, setSubjectStyle] = useState(getRandomWordStyle());
 
@@ -264,7 +253,6 @@ export default function Home() {
       setDisplayVerb(finalVerb);
       setDisplaySubject(finalSubject);
       setIsSpinning(false);
-      setCardBg(getRandomCardBg());
       setVerbStyle(getRandomWordStyle());
       setSubjectStyle(getRandomWordStyle());
     }, 800);
@@ -276,6 +264,7 @@ export default function Home() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
+      console.error(err);
     }
   };
 
@@ -286,96 +275,27 @@ export default function Home() {
     fontSize: "0.8rem",
     fontWeight: 600,
     cursor: "pointer",
-    background: active ? "#0f172a" : "#ffffff",
+    background: active ? "#111827" : "#ffffff",
     color: active ? "#f9fafb" : "#4b5563"
   });
 
   return (
     <>
-      <main
-        style={{
-          minHeight: "100vh",
-          background:
-            "linear-gradient(135deg, #f97316 0%, #ec4899 40%, #6366f1 100%)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: "1.5rem",
-          fontFamily:
-            "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 540,
-            width: "100%",
-            background: "rgba(255,255,255,0.96)",
-            borderRadius: 24,
-            padding: "1.75rem 1.5rem 1.5rem",
-            boxShadow: "0 20px 40px rgba(15, 23, 42, 0.25)"
-          }}
-        >
+      <main className="page">
+        <div className="card">
           {/* Title */}
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "1.25rem"
-            }}
-          >
-            <div
-              style={{
-                fontWeight: 900,
-                fontSize: "1.7rem",
-                letterSpacing: "0.03em",
-                background:
-                  "linear-gradient(120deg, #f97316, #ec4899, #6366f1)",
-                WebkitBackgroundClip: "text",
-                color: "transparent"
-              }}
-            >
-              Hanu Daw? 🤯
-            </div>
-            <div
-              style={{
-                fontSize: "0.8rem",
-                color: "#6b7280",
-                marginTop: "0.25rem"
-              }}
-            >
-              Taglish mashup generator para sa mga walang kausap sa gabi. 😆
-            </div>
-          </div>
+          <header className="header">
+            <h1>Hanu Daw? 🤯</h1>
+            <p>Taglish mashup generator. Pang-couple, pang-kids, pang-DGroup. 😆</p>
+          </header>
 
-          {/* Genre + Level controls */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.75rem",
-              marginBottom: "1.25rem"
-            }}
-          >
-            <div style={{ flex: "1 1 140px" }}>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  color: "#6b7280",
-                  marginBottom: "0.25rem"
-                }}
-              >
-                Genre
-              </div>
+          {/* Controls */}
+          <section className="controls">
+            <div className="control-group">
+              <label>Genre</label>
               <select
                 value={genre}
                 onChange={(e) => setGenre(e.target.value)}
-                style={{
-                  width: "100%",
-                  borderRadius: 999,
-                  border: "1px solid #e5e7eb",
-                  padding: "0.45rem 0.75rem",
-                  fontSize: "0.8rem",
-                  background: "#ffffff"
-                }}
               >
                 {genres.map((g) => (
                   <option key={g.value} value={g.value}>
@@ -385,14 +305,7 @@ export default function Home() {
               </select>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "0.4rem",
-                alignItems: "flex-end",
-                flexWrap: "wrap"
-              }}
-            >
+            <div className="level-group">
               <button
                 style={levelButtonStyle(level === "easy")}
                 onClick={() => setLevel("easy")}
@@ -412,153 +325,235 @@ export default function Home() {
                 Hard
               </button>
             </div>
-          </div>
+          </section>
 
-          {/* Phrase card */}
-          <div
-            style={{
-              borderRadius: 20,
-              padding: "1.6rem 1.25rem",
-              marginBottom: "1.25rem",
-              textAlign: "center",
-              background: cardBg,
-              transition: "background 0.3s ease"
-            }}
-          >
-            {/* slot-style squares */}
+          {/* Squares */}
+          <section className="square-row">
             <div
+              className={
+                isSpinning ? "square word-box slot-rolling" : "square word-box"
+              }
               style={{
-                display: "flex",
-                gap: "0.2rem",
-                justifyContent: "center",
-                marginBottom: "0.75rem",
-                flexWrap: "wrap"
+                background: verbStyle.bg,
+                color: verbStyle.color
               }}
             >
-              <div
-                className={isSpinning ? "word-box slot-rolling" : "word-box"}
-                style={{
-                  background: verbStyle.bg,
-                  color: verbStyle.color
-                }}
-              >
-                {displayVerb}
-              </div>
-              <div
-                className={isSpinning ? "word-box slot-rolling" : "word-box"}
-                style={{
-                  background: subjectStyle.bg,
-                  color: subjectStyle.color
-                }}
-              >
-                {displaySubject}
-              </div>
+              {displayVerb}
             </div>
+            <div
+              className={
+                isSpinning ? "square word-box slot-rolling" : "square word-box"
+              }
+              style={{
+                background: subjectStyle.bg,
+                color: subjectStyle.color
+              }}
+            >
+              {displaySubject}
+            </div>
+          </section>
 
-            <div
-              style={{
-                fontSize: "0.8rem",
-                color: "#e5e7eb",
-                marginBottom: "0.25rem"
-              }}
-            >
-              Verb: <b>{verb}</b> • Subject: <b>{subject}</b>
-            </div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "#e5e7eb"
-              }}
-            >
-              Genre: <b>{genres.find((g) => g.value === genre)?.label}</b> ·
-              Level: <b>{level.toUpperCase()}</b>
-            </div>
-          </div>
+          {/* Details */}
+          <section className="details">
+            <p>
+              <span className="label">Verb:</span> <b>{verb}</b> ·{" "}
+              <span className="label">Subject:</span> <b>{subject}</b>
+            </p>
+            <p>
+              <span className="label">Genre:</span>{" "}
+              <b>{genres.find((g) => g.value === genre)?.label}</b> ·{" "}
+              <span className="label">Level:</span>{" "}
+              <b>{level.toUpperCase()}</b>
+            </p>
+          </section>
 
           {/* Buttons */}
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
-          >
+          <section className="buttons">
             <button
+              className="primary-btn"
               onClick={shuffle}
               disabled={isSpinning}
-              style={{
-                border: "none",
-                borderRadius: 999,
-                padding: "0.85rem 1rem",
-                fontSize: "0.95rem",
-                fontWeight: 600,
-                background: isSpinning
-                  ? "#9ca3af"
-                  : "linear-gradient(135deg, #f97316 0%, #ec4899 50%, #6366f1 100%)",
-                color: "#f9fafb",
-                cursor: isSpinning ? "not-allowed" : "pointer"
-              }}
             >
               {isSpinning ? "Nagro-roll..." : "Hanu daw ulit? 🔁"}
             </button>
-
-            <button
-              onClick={copyToClipboard}
-              style={{
-                borderRadius: 999,
-                padding: "0.75rem 1rem",
-                fontSize: "0.9rem",
-                fontWeight: 500,
-                border: "1px solid #e5e7eb",
-                background: "#ffffff",
-                color: "#111827",
-                cursor: "pointer"
-              }}
-            >
+            <button className="secondary-btn" onClick={copyToClipboard}>
               {copied ? "Kinopya na! ✅" : "Copy sa clipboard 📋"}
             </button>
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              marginTop: "0.9rem",
-              fontSize: "0.7rem",
-              color: "#6b7280",
-              textAlign: "center"
-            }}
-          >
-            Pang-couple, pang-kids, pang-DGroup icebreaker. 😆
-          </div>
+          </section>
         </div>
       </main>
 
-      {/* slot-machine animation */}
       <style jsx>{`
-        .word-box {
-          width: 150px;
-          height: 150px;
-          border-radius: 0px;
+        .page {
+          min-height: 100vh;
           display: flex;
           align-items: center;
-          justifyContent: center;
+          justify-content: center;
+          padding: 1.5rem;
+          background: radial-gradient(circle at top, #ffe4e6, #e0f2fe 35%, #f4f4f5 70%);
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .card {
+          width: 100%;
+          max-width: 620px;
+          background: #ffffff;
+          border-radius: 32px;
+          padding: 1.8rem 1.8rem 1.6rem;
+          box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+        }
+
+        .header {
+          text-align: center;
+          margin-bottom: 1.4rem;
+        }
+
+        .header h1 {
+          margin: 0;
+          font-size: 1.9rem;
+          font-weight: 900;
+          letter-spacing: 0.04em;
+          color: #111827;
+        }
+
+        .header p {
+          margin: 0.3rem 0 0;
+          font-size: 0.85rem;
+          color: #6b7280;
+        }
+
+        .controls {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+          align-items: flex-end;
+          margin-bottom: 1.4rem;
+        }
+
+        .control-group {
+          flex: 1 1 170px;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .control-group label {
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: #6b7280;
+        }
+
+        .control-group select {
+          border-radius: 999px;
+          border: 1px solid #e5e7eb;
+          padding: 0.45rem 0.9rem;
+          font-size: 0.85rem;
+          background: #ffffff;
+          color: #111827;
+        }
+
+        .level-group {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .square-row {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+        }
+
+        .square {
+          aspect-ratio: 1 / 1;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           font-size: 1.6rem;
           font-weight: 800;
           text-transform: lowercase;
+          box-shadow: 0 14px 35px rgba(15, 23, 42, 0.35);
         }
 
-        .slot-rolling {
+        .details {
+          text-align: center;
+          font-size: 0.82rem;
+          color: #4b5563;
+          margin-bottom: 1.2rem;
+        }
+
+        .details p {
+          margin: 0.15rem 0;
+        }
+
+        .label {
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          font-size: 0.7rem;
+          color: #9ca3af;
+        }
+
+        .buttons {
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+        }
+
+        .primary-btn {
+          border: none;
+          border-radius: 999px;
+          padding: 0.85rem 1rem;
+          font-size: 0.95rem;
+          font-weight: 600;
+          background: linear-gradient(135deg, #f97316, #ec4899, #6366f1);
+          color: #f9fafb;
+          cursor: pointer;
+        }
+
+        .primary-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
+        }
+
+        .secondary-btn {
+          border-radius: 999px;
+          padding: 0.75rem 1rem;
+          font-size: 0.9rem;
+          font-weight: 500;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+          color: #111827;
+          cursor: pointer;
+        }
+
+        .word-box.slot-rolling {
           animation: slot-spin 0.25s linear infinite;
         }
 
         @keyframes slot-spin {
           0% {
-            transform: translateY(25px);
+            transform: translateY(20px);
             opacity: 0.8;
           }
           50% {
-            transform: translateY(-25px);
+            transform: translateY(-20px);
             opacity: 1;
           }
           100% {
-            transform: translateY(25px);
+            transform: translateY(20px);
             opacity: 0.8;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .card {
+            padding: 1.4rem 1.2rem 1.3rem;
+          }
+          .square {
+            font-size: 1.3rem;
           }
         }
       `}</style>
