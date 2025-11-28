@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 const genres = [
   { value: "all", label: "All" },
@@ -174,7 +174,7 @@ function getWeightedPool(base, genreValue, map) {
 
   if (!inGenre.length) return base;
 
-  // 3x weight for genre-matching words
+  // bias words that match the genre
   return [...inGenre, ...inGenre, ...inGenre, ...outGenre];
 }
 
@@ -184,6 +184,12 @@ function getRandomNoteStyle() {
   const bg = `hsl(${hue} 95% ${lightness}%)`;
   const color = "#111827";
   return { bg, color };
+}
+
+function formatTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 // ---------- COMPONENT ----------
@@ -202,63 +208,44 @@ export default function Home() {
   const [verbStyle, setVerbStyle] = useState(getRandomNoteStyle());
   const [subjectStyle, setSubjectStyle] = useState(getRandomNoteStyle());
 
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [countdown, setCountdown] = useState(0);
-
-  const spinIntervalRef = useRef(null);
-  const spinTimeoutRef = useRef(null);
-
+  // sounds
+  const [soundOn, setSoundOn] = useState(true);
   const clickSoundRef = useRef(null);
   const rollSoundRef = useRef(null);
   const dingSoundRef = useRef(null);
+  const tickSoundRef = useRef(null);
+  const alarmSoundRef = useRef(null);
 
-  // Setup & cleanup
+  // slot-machine spin
+  const spinIntervalRef = useRef(null);
+  const spinTimeoutRef = useRef(null);
+
+  // timer
+  const [timerSeconds, setTimerSeconds] = useState(30); // base duration
+  const [remainingSeconds, setRemainingSeconds] = useState(30);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState("0.5");
+  const timerIntervalRef = useRef(null);
+
+  // init sounds once
   useEffect(() => {
-    // Setup audio only on client
-    if (typeof window !== "undefined") {
+    if (typeof Audio !== "undefined") {
       clickSoundRef.current = new Audio("/sounds/click.mp3");
       rollSoundRef.current = new Audio("/sounds/roll.mp3");
-      rollSoundRef.current.loop = true;
       dingSoundRef.current = new Audio("/sounds/ding.mp3");
+      tickSoundRef.current = new Audio("/sounds/tick.mp3");   // tiktok style tick
+      alarmSoundRef.current = new Audio("/sounds/alarm.mp3"); // alarm pag time's up
     }
+  }, []);
 
+  // cleanup on unmount
+  useEffect(() => {
     return () => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
       if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
-
-      [clickSoundRef, rollSoundRef, dingSoundRef].forEach((ref) => {
-        if (ref.current) {
-          ref.current.pause();
-        }
-      });
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (tickSoundRef.current) tickSoundRef.current.pause();
     };
-  }, []);
-
-  const playSound = useCallback(
-    (type) => {
-      if (!soundEnabled) return;
-      let audioRef = null;
-      if (type === "click") audioRef = clickSoundRef;
-      if (type === "roll") audioRef = rollSoundRef;
-      if (type === "ding") audioRef = dingSoundRef;
-      const audio = audioRef?.current;
-      if (!audio) return;
-      try {
-        audio.currentTime = 0;
-        audio.play().catch(() => {});
-      } catch {
-        // ignore
-      }
-    },
-    [soundEnabled]
-  );
-
-  const stopRollSound = useCallback(() => {
-    const audio = rollSoundRef.current;
-    if (!audio) return;
-    audio.pause();
-    audio.currentTime = 0;
   }, []);
 
   const { verbPool, subjectPool } = useMemo(() => {
@@ -279,7 +266,102 @@ export default function Home() {
     return { verbPool: verbs, subjectPool: subjects };
   }, [level, genre]);
 
-  const shuffle = useCallback(() => {
+  // ---------- SOUND HELPERS ----------
+
+  const playOnce = (ref) => {
+    if (!soundOn || !ref?.current) return;
+    try {
+      ref.current.currentTime = 0;
+      ref.current.play();
+    } catch {
+      // ignore
+    }
+  };
+
+  const startTick = () => {
+    if (!soundOn || !tickSoundRef.current) return;
+    try {
+      tickSoundRef.current.currentTime = 0;
+      tickSoundRef.current.loop = true;
+      tickSoundRef.current.play();
+    } catch {
+      // ignore
+    }
+  };
+
+  const stopTick = () => {
+    if (!tickSoundRef.current) return;
+    tickSoundRef.current.pause();
+    tickSoundRef.current.currentTime = 0;
+  };
+
+  // ---------- TIMER LOGIC ----------
+
+  const clearTimerInterval = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  };
+
+  const startTimer = () => {
+    if (isTimerRunning) return;
+
+    // kung zero na, reset muna sa base
+    if (remainingSeconds <= 0) {
+      setRemainingSeconds(timerSeconds || 30);
+    }
+
+    clearTimerInterval();
+    setIsTimerRunning(true);
+    startTick();
+
+    timerIntervalRef.current = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          clearTimerInterval();
+          setIsTimerRunning(false);
+          stopTick();
+          playOnce(alarmSoundRef);
+          playOnce(dingSoundRef);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const pauseTimer = () => {
+    clearTimerInterval();
+    setIsTimerRunning(false);
+    stopTick();
+  };
+
+  const resetTimer = () => {
+    clearTimerInterval();
+    setIsTimerRunning(false);
+    stopTick();
+    setRemainingSeconds(timerSeconds);
+  };
+
+  const setPresetSeconds = (secs) => {
+    clearTimerInterval();
+    setIsTimerRunning(false);
+    stopTick();
+    setTimerSeconds(secs);
+    setRemainingSeconds(secs);
+  };
+
+  const applyCustomMinutes = () => {
+    const mins = parseFloat(customMinutes);
+    if (Number.isNaN(mins) || mins <= 0) return;
+    const secs = Math.round(mins * 60);
+    setPresetSeconds(secs);
+  };
+
+  // ---------- SHUFFLE LOGIC ----------
+
+  const shuffle = () => {
     if (isSpinning) return;
     if (!verbPool.length || !subjectPool.length) return;
 
@@ -289,17 +371,17 @@ export default function Home() {
     setIsSpinning(true);
     setCopied(false);
 
-    playSound("click");
-    playSound("roll");
+    playOnce(clickSoundRef);
 
     spinIntervalRef.current = setInterval(() => {
       setDisplayVerb(getRandom(verbPool));
       setDisplaySubject(getRandom(subjectPool));
     }, 80);
 
+    playOnce(rollSoundRef);
+
     spinTimeoutRef.current = setTimeout(() => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
-      stopRollSound();
 
       setVerb(finalVerb);
       setSubject(finalSubject);
@@ -308,33 +390,10 @@ export default function Home() {
       setIsSpinning(false);
       setVerbStyle(getRandomNoteStyle());
       setSubjectStyle(getRandomNoteStyle());
-      playSound("ding");
+
+      playOnce(dingSoundRef);
     }, 900);
-  }, [
-    isSpinning,
-    verbPool,
-    subjectPool,
-    playSound,
-    stopRollSound
-  ]);
-
-  // Auto-roll timer
-  useEffect(() => {
-    if (!countdown || countdown <= 0) return;
-
-    const id = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          // trigger auto shuffle
-          shuffle();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [countdown, shuffle]);
+  };
 
   const copyToClipboard = async () => {
     try {
@@ -358,14 +417,16 @@ export default function Home() {
     boxShadow: active ? "0 4px 10px rgba(248, 113, 113, 0.5)" : "none"
   });
 
-  const startPresetTimer = (seconds) => {
-    if (seconds <= 0) return;
-    setCountdown(seconds);
-  };
-
-  const applyCustomTimer = () => {
-    if (!timerSeconds || timerSeconds <= 0) return;
-    setCountdown(timerSeconds);
+  const toggleSound = () => {
+    setSoundOn((prev) => {
+      const next = !prev;
+      if (!next) {
+        stopTick();
+        // stop other looping-ish sounds just in case
+        rollSoundRef.current?.pause();
+      }
+      return next;
+    });
   };
 
   return (
@@ -384,7 +445,7 @@ export default function Home() {
             </p>
           </header>
 
-          {/* Controls */}
+          {/* Genre + Level */}
           <section className="controls">
             <div className="control-group">
               <label>Genre</label>
@@ -419,6 +480,81 @@ export default function Home() {
               >
                 Hard
               </button>
+            </div>
+          </section>
+
+          {/* Timer + Sound row (always visible) */}
+          <section className="settings-row">
+            <div className="timer-box">
+              <div className="timer-header">
+                <span>Timer</span>
+                <span className="timer-sub">pang round / turn 😆</span>
+              </div>
+              <div className="timer-display">
+                {formatTime(remainingSeconds)}
+              </div>
+
+              <div className="timer-controls">
+                <div className="timer-presets">
+                  <button
+                    className="chip"
+                    onClick={() => setPresetSeconds(30)}
+                  >
+                    30s
+                  </button>
+                  <button
+                    className="chip"
+                    onClick={() => setPresetSeconds(60)}
+                  >
+                    1 min
+                  </button>
+                  <button
+                    className="chip"
+                    onClick={() => setPresetSeconds(90)}
+                  >
+                    1:30
+                  </button>
+                </div>
+
+                <div className="timer-custom">
+                  <span className="timer-custom-label">Custom min</span>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={customMinutes}
+                    onChange={(e) => setCustomMinutes(e.target.value)}
+                  />
+                  <button className="tiny-btn" onClick={applyCustomMinutes}>
+                    Set
+                  </button>
+                </div>
+              </div>
+
+              <div className="timer-actions">
+                <button
+                  className="timer-main-btn"
+                  onClick={isTimerRunning ? pauseTimer : startTimer}
+                >
+                  {isTimerRunning ? "Pause ⏸️" : "Start ▶️"}
+                </button>
+                <button className="timer-reset-btn" onClick={resetTimer}>
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div className="sound-box">
+              <div className="sound-title">Sound</div>
+              <button
+                className={soundOn ? "sound-toggle on" : "sound-toggle off"}
+                onClick={toggleSound}
+              >
+                {soundOn ? "🔊 On" : "🔇 Silent mode"}
+              </button>
+              <p className="sound-hint">
+                May click, TikTok-style tick at alarm pag naka-on.
+              </p>
             </div>
           </section>
 
@@ -482,59 +618,6 @@ export default function Home() {
               {copied ? "Kinopya na! ✅" : "Copy sa clipboard 📋"}
             </button>
           </section>
-
-          {/* Timer & Sound controls */}
-          <section className="timer-sound-wrapper">
-            <div className="timer-controls">
-              <div className="timer-header">
-                <span className="timer-title">⏱ Timer</span>
-                <span className="timer-sub">
-                  Auto-roll para di kayo maubusan ng tanong
-                </span>
-              </div>
-
-              <div className="timer-buttons">
-                <button onClick={() => startPresetTimer(10)}>10s</button>
-                <button onClick={() => startPresetTimer(20)}>20s</button>
-                <button onClick={() => startPresetTimer(30)}>30s</button>
-              </div>
-
-              <div className="timer-custom">
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="Custom seconds..."
-                  value={timerSeconds || ""}
-                  onChange={(e) =>
-                    setTimerSeconds(Number(e.target.value) || 0)
-                  }
-                />
-                <button onClick={applyCustomTimer}>Set Timer</button>
-              </div>
-
-              {countdown > 0 && (
-                <p className="timer-countdown">
-                  Next auto-roll in <b>{countdown}s</b> ⏳
-                </p>
-              )}
-            </div>
-
-            <div className="sound-toggle">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={soundEnabled}
-                  onChange={() => setSoundEnabled((v) => !v)}
-                />
-                <span className="sound-label">
-                  {soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF"}
-                </span>
-              </label>
-              <p className="sound-hint">
-                Tip: I-mute kung nasa church, office, or tulog na si baby. 😅
-              </p>
-            </div>
-          </section>
         </div>
       </main>
 
@@ -555,7 +638,7 @@ export default function Home() {
 
         .board-card {
           width: 100%;
-          max-width: 640px;
+          max-width: 680px;
           background: #fefeff;
           border-radius: 26px;
           padding: 1.8rem 1.6rem 1.5rem;
@@ -604,7 +687,7 @@ export default function Home() {
           flex-wrap: wrap;
           gap: 1rem;
           align-items: flex-end;
-          margin-bottom: 1.4rem;
+          margin-bottom: 1.0rem;
         }
 
         .control-group {
@@ -641,6 +724,187 @@ export default function Home() {
           gap: 0.5rem;
           flex-wrap: wrap;
         }
+
+        /* Timer + Sound row */
+
+        .settings-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+          margin-bottom: 1.3rem;
+        }
+
+        .timer-box {
+          flex: 2 1 260px;
+          background: #f9fafb;
+          border-radius: 18px;
+          padding: 0.9rem 1rem;
+          box-shadow: inset 0 0 0 1px #e5e7eb;
+        }
+
+        .timer-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          margin-bottom: 0.35rem;
+        }
+
+        .timer-header span:first-child {
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: #6b7280;
+        }
+
+        .timer-sub {
+          font-size: 0.7rem;
+          color: #9ca3af;
+        }
+
+        .timer-display {
+          font-size: 2.1rem;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          text-align: center;
+          padding: 0.35rem 0.5rem;
+          border-radius: 14px;
+          background: #ffffff;
+          border: 1px dashed #e5e7eb;
+          margin-bottom: 0.7rem;
+        }
+
+        .timer-controls {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.6rem;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .timer-presets {
+          display: flex;
+          gap: 0.4rem;
+          flex-wrap: wrap;
+        }
+
+        .chip {
+          border-radius: 999px;
+          border: 1px solid #e5e7eb;
+          padding: 0.25rem 0.6rem;
+          font-size: 0.75rem;
+          background: #ffffff;
+          cursor: pointer;
+        }
+
+        .chip:hover {
+          border-color: #fb7185;
+        }
+
+        .timer-custom {
+          display: flex;
+          align-items: center;
+          gap: 0.3rem;
+          font-size: 0.75rem;
+        }
+
+        .timer-custom-label {
+          color: #9ca3af;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+
+        .timer-custom input {
+          width: 3.2rem;
+          border-radius: 999px;
+          border: 1px solid #e5e7eb;
+          padding: 0.25rem 0.4rem;
+          font-size: 0.75rem;
+          text-align: right;
+        }
+
+        .tiny-btn {
+          border-radius: 999px;
+          border: none;
+          padding: 0.25rem 0.6rem;
+          font-size: 0.7rem;
+          background: #fb7185;
+          color: #ffffff;
+          cursor: pointer;
+        }
+
+        .timer-actions {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.7rem;
+        }
+
+        .timer-main-btn {
+          flex: 1;
+          border-radius: 999px;
+          border: none;
+          padding: 0.45rem 0.6rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          background: linear-gradient(135deg, #22c55e, #16a34a);
+          color: #ffffff;
+          cursor: pointer;
+        }
+
+        .timer-reset-btn {
+          border-radius: 999px;
+          border: 1px solid #e5e7eb;
+          padding: 0.45rem 0.6rem;
+          font-size: 0.8rem;
+          background: #ffffff;
+          cursor: pointer;
+        }
+
+        .sound-box {
+          flex: 1 1 160px;
+          background: #fff7ed;
+          border-radius: 18px;
+          padding: 0.8rem 0.9rem;
+          box-shadow: inset 0 0 0 1px #fed7aa;
+        }
+
+        .sound-title {
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: #92400e;
+          margin-bottom: 0.4rem;
+        }
+
+        .sound-toggle {
+          width: 100%;
+          border-radius: 999px;
+          padding: 0.45rem 0.6rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          border: none;
+          cursor: pointer;
+          margin-bottom: 0.3rem;
+        }
+
+        .sound-toggle.on {
+          background: #22c55e;
+          color: #ffffff;
+        }
+
+        .sound-toggle.off {
+          background: #e5e7eb;
+          color: #4b5563;
+        }
+
+        .sound-hint {
+          font-size: 0.7rem;
+          color: #92400e;
+          margin: 0;
+        }
+
+        /* Notes */
 
         .notes-area {
           position: relative;
@@ -738,7 +1002,6 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           gap: 0.6rem;
-          margin-bottom: 1rem;
         }
 
         .primary-btn {
@@ -770,128 +1033,20 @@ export default function Home() {
           cursor: pointer;
         }
 
-        .timer-sound-wrapper {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 1rem;
-          margin-top: 0.4rem;
-        }
-
-        .timer-controls {
-          flex: 2 1 230px;
-          border-radius: 16px;
-          padding: 0.75rem 0.9rem;
-          background: #f9fafb;
-          border: 1px dashed #e5e7eb;
-        }
-
-        .timer-header {
-          margin-bottom: 0.4rem;
-        }
-
-        .timer-title {
-          font-size: 0.8rem;
-          font-weight: 700;
-        }
-
-        .timer-sub {
-          display: block;
-          font-size: 0.72rem;
-          color: #6b7280;
-        }
-
-        .timer-buttons {
-          display: flex;
-          gap: 0.35rem;
-          margin-bottom: 0.5rem;
-          flex-wrap: wrap;
-        }
-
-        .timer-buttons button {
-          border-radius: 999px;
-          border: 1px solid #e5e7eb;
-          background: #ffffff;
-          padding: 0.3rem 0.7rem;
-          font-size: 0.78rem;
-          cursor: pointer;
-        }
-
-        .timer-buttons button:hover {
-          border-color: #fb7185;
-        }
-
-        .timer-custom {
-          display: flex;
-          gap: 0.4rem;
-          align-items: center;
-          margin-bottom: 0.3rem;
-        }
-
-        .timer-custom input {
-          flex: 1;
-          border-radius: 999px;
-          border: 1px solid #e5e7eb;
-          padding: 0.3rem 0.7rem;
-          font-size: 0.78rem;
-        }
-
-        .timer-custom button {
-          border-radius: 999px;
-          border: none;
-          background: #f97316;
-          color: #ffffff;
-          padding: 0.35rem 0.8rem;
-          font-size: 0.78rem;
-          cursor: pointer;
-        }
-
-        .timer-countdown {
-          font-size: 0.78rem;
-          color: #4b5563;
-        }
-
-        .sound-toggle {
-          flex: 1 1 160px;
-          border-radius: 16px;
-          padding: 0.75rem 0.9rem;
-          background: #fff7ed;
-          border: 1px dashed #fed7aa;
-        }
-
-        .sound-toggle label {
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-          font-size: 0.82rem;
-          font-weight: 600;
-        }
-
-        .sound-toggle input[type="checkbox"] {
-          width: 16px;
-          height: 16px;
-        }
-
-        .sound-label {
-          user-select: none;
-        }
-
-        .sound-hint {
-          margin: 0.35rem 0 0;
-          font-size: 0.72rem;
-          color: #92400e;
-        }
-
         @media (max-width: 640px) {
           .board-card {
             padding: 1.5rem 1.3rem 1.3rem;
           }
+
           .notes-area {
             grid-template-columns: 1fr;
           }
+
           .note {
             min-height: 120px;
           }
-          .timer-sound-wrapper {
+
+          .settings-row {
             flex-direction: column;
           }
         }
