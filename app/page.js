@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 
 const genres = [
   { value: "all", label: "All" },
@@ -158,6 +159,34 @@ const genreSubjectMap = {
   ])
 };
 
+// ---------- URL PARAM HELPERS (Android → Web) ----------
+
+function normalizeGenreFromParam(raw) {
+  if (!raw) return "genz";
+  const lower = String(raw).toLowerCase();
+
+  if (lower.includes("couple")) return "couples";
+  if (lower.includes("kid")) return "kids";
+  if (lower.includes("christ")) return "christian";
+  if (lower.includes("social")) return "social";
+  if (lower.includes("millen")) return "millennial";
+  if (lower.includes("boom")) return "boomer";
+  if (lower.includes("all")) return "all";
+
+  // "Gen Z" or "genz"
+  if (lower.includes("gen")) return "genz";
+
+  return "genz";
+}
+
+function normalizeLevelFromParam(raw) {
+  if (!raw) return "easy";
+  const lower = String(raw).toLowerCase();
+  if (lower.startsWith("med")) return "medium";
+  if (lower.startsWith("hard")) return "hard";
+  return "easy";
+}
+
 // ---------- HELPERS ----------
 
 function getRandom(arr) {
@@ -188,8 +217,17 @@ function getRandomNoteStyle() {
 // ---------- COMPONENT ----------
 
 export default function Home() {
-  const [genre, setGenre] = useState("all");
-  const [level, setLevel] = useState("easy");
+  const searchParams = useSearchParams();
+
+  const [genre, setGenre] = useState(() =>
+    normalizeGenreFromParam(searchParams.get("genre"))
+  );
+  const [level, setLevel] = useState(() =>
+    normalizeLevelFromParam(searchParams.get("level"))
+  );
+
+  const isEmbeddedFromApp =
+    !!searchParams.get("genre") || !!searchParams.get("level");
 
   const [verb, setVerb] = useState("laba");
   const [subject, setSubject] = useState("paa");
@@ -204,6 +242,16 @@ export default function Home() {
   const spinIntervalRef = useRef(null);
   const spinTimeoutRef = useRef(null);
 
+  // sync kapag nagbago URL (galing Android)
+  useEffect(() => {
+    const genreParam = searchParams.get("genre");
+    const levelParam = searchParams.get("level");
+
+    if (genreParam) setGenre(normalizeGenreFromParam(genreParam));
+    if (levelParam) setLevel(normalizeLevelFromParam(levelParam));
+  }, [searchParams]);
+
+  // cleanup spinner timers
   useEffect(() => {
     return () => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
@@ -295,43 +343,45 @@ export default function Home() {
             </p>
           </header>
 
-          {/* Controls */}
-          <section className="controls">
-            <div className="control-group">
-              <label>Genre</label>
-              <select
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-              >
-                {genres.map((g) => (
-                  <option key={g.value} value={g.value}>
-                    {g.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Controls – only show kapag hindi galing Android app */}
+          {!isEmbeddedFromApp && (
+            <section className="controls">
+              <div className="control-group">
+                <label>Genre</label>
+                <select
+                  value={genre}
+                  onChange={(e) => setGenre(e.target.value)}
+                >
+                  {genres.map((g) => (
+                    <option key={g.value} value={g.value}>
+                      {g.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="level-group">
-              <button
-                style={levelButtonStyle(level === "easy")}
-                onClick={() => setLevel("easy")}
-              >
-                Easy
-              </button>
-              <button
-                style={levelButtonStyle(level === "medium")}
-                onClick={() => setLevel("medium")}
-              >
-                Medium
-              </button>
-              <button
-                style={levelButtonStyle(level === "hard")}
-                onClick={() => setLevel("hard")}
-              >
-                Hard
-              </button>
-            </div>
-          </section>
+              <div className="level-group">
+                <button
+                  style={levelButtonStyle(level === "easy")}
+                  onClick={() => setLevel("easy")}
+                >
+                  Easy
+                </button>
+                <button
+                  style={levelButtonStyle(level === "medium")}
+                  onClick={() => setLevel("medium")}
+                >
+                  Medium
+                </button>
+                <button
+                  style={levelButtonStyle(level === "hard")}
+                  onClick={() => setLevel("hard")}
+                >
+                  Hard
+                </button>
+              </div>
+            </section>
+          )}
 
           {/* Sticky notes area */}
           <section className="notes-area">
