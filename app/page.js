@@ -16,7 +16,7 @@ const genres = [
 ];
 
 // ------------------ WORD LISTS ------------------
-// 50 easy verbs (daily / wholesome Taglish)
+// 50-ish easy verbs (daily / wholesome Taglish)
 const easyVerbs = [
   "laba", "hugas", "linis", "ayos", "tiklop",
   "timpla", "kain", "inom", "tulog", "gising",
@@ -30,35 +30,35 @@ const easyVerbs = [
   "sayaw", "laro", "basa", "sulat", "kapit"
 ];
 
-// 50 medium verbs (mas emotional / relational)
+// medium verbs (mas emotional / relational)
 const mediumVerbs = [
   "kulitan", "asar", "tukso", "tiis", "intindi",
   "unawa", "tanggap", "salo", "buhat", "hatak",
   "tulak", "ipagluto", "ipagkape", "ipaghain", "makinig",
   "usap", "cheer", "comfort", "advise", "encourage",
   "support", "protect", "defend", "kampi", "bati",
-  "bawi", "bantay", "sundo", "hatid", "sabay",
-  "date", "kulong", "yakap-tight", "harot", "harana",
-  "kulong-netflix", "surprise", "kulitan-chat", "paalala", "remind",
-  "schedule", "plan", "organize", "budget", "ipon",
-  "bayad", "invest", "delegate", "mentor", "coach"
+  "bawi", "sabay", "date", "yakap-tight", "harot",
+  "harana", "surprise", "paalala", "remind", "schedule",
+  "plan", "organize", "budget", "ipon", "bayad",
+  "invest", "delegate", "mentor", "coach", "review",
+  "update", "manage", "handle", "lead", "guide"
 ];
 
-// 50 hard verbs (weird / social / internet chaos)
+// hard verbs (weird / social / internet chaos)
 const hardVerbs = [
   "screenshot", "screenrecord", "stalk", "ghost", "seenzone",
   "block", "unfollow", "mute", "react", "rant",
   "subtweet", "spill", "lurk", "doomscroll", "overthink",
   "panic-buy", "ubos-salary", "flex", "hagulgol", "singhot",
-  "dakma", "pitik", "paamoy", "sampal-hangin", "sapak-joke",
-  "tusok-fork", "harbat", "nakaw-kiss", "tusok-tanong", "paasa",
-  "balik-ligo", "ulit-chat", "spam", "double-text", "triple-text",
-  "left-on-read", "zoom-in", "crop", "filter", "auto-tune",
-  "slowmo", "fastforward", "rewind", "pause", "skip",
-  "repeat", "remix", "lag", "buffer", "cringe"
+  "dakma", "pitik", "paamoy", "paasa", "balik-chat",
+  "spam", "double-text", "triple-text", "left-on-read", "zoom-in",
+  "crop", "filter", "auto-tune", "slowmo", "fastforward",
+  "rewind", "pause", "skip", "repeat", "remix",
+  "lag", "buffer", "cringe", "archive", "unarchive",
+  "mute-story", "unmute", "report", "cancel", "revive"
 ];
 
-// 50 easy subjects (body + daily objects)
+// easy subjects (body + daily objects)
 const easySubjects = [
   "paa", "kamay", "ulo", "puso", "pisngi",
   "tenga", "ilong", "buhok", "mata", "ngipin",
@@ -72,36 +72,35 @@ const easySubjects = [
   "ballpen", "jacket", "towel", "remote", "id"
 ];
 
-// 50 medium subjects (feelings / life stuff)
+// medium subjects (feelings / life stuff)
 const mediumSubjects = [
   "feelings", "emotions", "tampuhan", "lambing", "tiwala",
   "oras", "pasensya", "pangarap", "plano", "lagay",
   "schedule", "deadline", "konsensya", "ego", "pride",
-  "sikmura", "pagod", "gutom", "antok", "sweldo",
-  "budget", "ipon", "gastos", "utang", "resibo",
-  "allowance", "baon", "project", "task", "message",
-  "inbox", "notification", "password", "account", "profile",
-  "status", "story", "feed", "reaction", "comment",
-  "like", "share", "struggle", "progress", "victory",
-  "lesson", "habit", "routine", "secret", "goal"
+  "pagod", "gutom", "antok", "sweldo", "budget",
+  "ipon", "gastos", "utang", "resibo", "allowance",
+  "baon", "project", "task", "message", "inbox",
+  "notification", "password", "account", "profile", "status",
+  "story", "feed", "reaction", "comment", "like",
+  "share", "struggle", "progress", "victory", "lesson",
+  "habit", "routine", "secret", "goal", "plan"
 ];
 
-// 50 hard subjects (social media / chismis / chaos)
+// hard subjects (social media / chismis / chaos)
 const hardSubjects = [
   "ex", "thirdparty", "marites", "chismis", "issue",
-  "tea", "screenshot", "receipts", "dm", "seen",
-  "ghost", "blocklist", "mute-list", "timeline", "algorithm",
-  "filter", "preset", "clout", "cancel", "toxic",
-  "crush", "situationship", "delulu", "fantasy", "rizz",
-  "aura", "vibes", "ego-trip", "mid", "stan",
-  "fandom", "ship", "meme", "cringe", "ghosto",
+  "tea", "dm", "seen", "ghost", "blocklist",
+  "timeline", "algorithm", "filter", "preset", "clout",
+  "cancel", "toxic", "crush", "situationship", "delulu",
+  "fantasy", "rizz", "aura", "vibes", "mid",
+  "stan", "fandom", "ship", "meme", "cringe",
   "lag", "buffer", "update", "patch", "archive",
   "draft", "spam", "scam", "phishing", "virus",
-  "bug", "glitch", "drama", "tsismis", "timeline-war"
+  "bug", "glitch", "drama", "tsismis", "comment-section",
+  "thread", "groupchat", "feed", "story", "live"
 ];
 
 // ------------------ GENRE FILTERS ------------------
-// these are "preferred words" per genre; if none match, we fall back to full list
 
 const genreVerbMap = {
   couples: new Set([
@@ -114,7 +113,7 @@ const genreVerbMap = {
   kids: new Set([
     "kain", "inom", "tulog", "gising", "laro",
     "takbo", "sayaw", "kanta", "basa", "sulat",
-    "kulitan", "asar", "tukso", "harot", "cheer"
+    "kulitan", "asar", "tukso", "cheer"
   ]),
   christian: new Set([
     "pray", "kanta", "encourage", "support", "comfort",
@@ -136,7 +135,7 @@ const genreVerbMap = {
   millennial: new Set([
     "budget", "ipon", "bayad", "invest", "delegate",
     "mentor", "coach", "plan", "organize", "hatid",
-    "sundo", "work", "pray", "kape", "tulog"
+    "sundo", "pray", "kape", "tulog", "work"
   ]),
   boomer: new Set([
     "tawag", "text", "hatid", "sundo", "walis",
@@ -153,14 +152,12 @@ const genreSubjectMap = {
     "goal", "secret", "habit", "routine"
   ]),
   kids: new Set([
-    "paa", "kamay", "ulo", "kape", // joke for parents
-    "tinapay", "kanin", "ulam", "laruan", "gutom",
-    "antok"
+    "paa", "kamay", "ulo", "tinapay", "kanin",
+    "ulam", "laro", "gutom", "antok"
   ]),
   christian: new Set([
     "puso", "feelings", "konsensya", "ego", "pride",
-    "lesson", "habit", "routine", "pangarap", "goal",
-    "pray", "status"
+    "lesson", "habit", "routine", "pangarap", "goal"
   ]),
   social: new Set([
     "message", "inbox", "notification", "account", "profile",
@@ -173,12 +170,12 @@ const genreSubjectMap = {
   ]),
   millennial: new Set([
     "sweldo", "budget", "ipon", "gastos", "utang",
-    "resibo", "deadline", "project", "task", "coffee",
-    "kape", "status"
+    "resibo", "deadline", "project", "task", "kape",
+    "status"
   ]),
   boomer: new Set([
-    "wallet", "keys", "resibo", "landline", "payong",
-    "baon", "allowance", "sweldo", "utang", "drama"
+    "wallet", "keys", "resibo", "payong", "baon",
+    "allowance", "sweldo", "utang", "drama"
   ])
 };
 
@@ -193,14 +190,14 @@ function filterByGenre(base, genreValue, map) {
   const set = map[genreValue];
   if (!set) return base;
   const filtered = base.filter((word) => set.has(word));
-  return filtered.length ? filtered : base;
+  return filtered.length ? filtered : base; // fallback kung walang match
 }
 
 function getRandomCardBg() {
   const hue = Math.floor(Math.random() * 360);
   const hue2 = (hue + 40) % 360;
-  // dark-ish gradient so light text always readable
-  return `linear-gradient(135deg, hsl(${hue} 80%% 20%%), hsl(${hue2} 80%% 30%%))`;
+  // DARK gradient so white text is always readable
+  return `linear-gradient(135deg, hsl(${hue} 80% 18%), hsl(${hue2} 80% 28%))`;
 }
 
 // ------------------ COMPONENT ------------------
@@ -222,7 +219,6 @@ export default function Home() {
   const spinTimeoutRef = useRef(null);
 
   useEffect(() => {
-    // cleanup intervals on unmount
     return () => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
       if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
@@ -231,21 +227,17 @@ export default function Home() {
 
   const currentVerbs = useMemo(() => {
     const base =
-      level === "easy"
-        ? easyVerbs
-        : level === "medium"
-        ? mediumVerbs
-        : hardVerbs;
+      level === "easy" ? easyVerbs :
+      level === "medium" ? mediumVerbs :
+      hardVerbs;
     return filterByGenre(base, genre, genreVerbMap);
   }, [level, genre]);
 
   const currentSubjects = useMemo(() => {
     const base =
-      level === "easy"
-        ? easySubjects
-        : level === "medium"
-        ? mediumSubjects
-        : hardSubjects;
+      level === "easy" ? easySubjects :
+      level === "medium" ? mediumSubjects :
+      hardSubjects;
     return filterByGenre(base, genre, genreSubjectMap);
   }, [level, genre]);
 
@@ -261,7 +253,6 @@ export default function Home() {
     setIsSpinning(true);
     setCopied(false);
 
-    // start "slot machine" roll
     spinIntervalRef.current = setInterval(() => {
       setDisplayVerb(getRandom(currentVerbs));
       setDisplaySubject(getRandom(currentSubjects));
@@ -269,7 +260,6 @@ export default function Home() {
 
     spinTimeoutRef.current = setTimeout(() => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
-
       setVerb(finalVerb);
       setSubject(finalSubject);
       setDisplayVerb(finalVerb);
@@ -423,103 +413,10 @@ export default function Home() {
             textAlign: "center",
             background: cardBg,
             transition: "background 0.3s ease"
-            style={{
-  background: cardBg,
-  transition: "background 0.3s ease",
-  color: "white",
-  mixBlendMode: "normal",
-  isolation: "isolate", // fixes blend bugs
-}}
-
           }}
         >
-       <div
-  style={{
-    fontSize: "2.1rem",
-    fontWeight: 800,
-    color: "white",
-    mixBlendMode: "difference",
-    wordBreak: "break-word",
-    lineHeight: 1.1
-  }}
->
-  {phrase}
-<div
-  style={{
-    marginTop: "0.75rem",
-    fontSize: "0.8rem",
-    color: "white",
-    mixBlendMode: "difference"
-  }}
->
-  Verb: <b>{verb}</b> • Subject: <b>{subject}</b>
-</div>
-
-<div
-  style={{
-    marginTop: "0.35rem",
-    fontSize: "0.7rem",
-    color: "white",
-    mixBlendMode: "difference"
-  }}
->
-  Genre: <b>{genres.find((g) => g.value === genre)?.label}</b> · Level:{" "}
-  <b>{level.toUpperCase()}</b>
-</div>
-
-
-        {/* Buttons */}
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
-        >
-          <button
-            onClick={shuffle}
-            disabled={isSpinning}
+          <div
             style={{
-              border: "none",
-              borderRadius: 999,
-              padding: "0.8rem 1rem",
-              fontSize: "0.95rem",
-              fontWeight: 600,
-              background: isSpinning
-                ? "#9ca3af"
-                : "linear-gradient(135deg, #f97316 0%, #ec4899 50%, #6366f1 100%)",
-              color: "#f9fafb",
-              cursor: isSpinning ? "not-allowed" : "pointer"
-            }}
-          >
-            {isSpinning ? "Nagro-roll..." : "Hanu daw ulit? 🔁"}
-          </button>
-
-          <button
-            onClick={copyToClipboard}
-            style={{
-              borderRadius: 999,
-              padding: "0.75rem 1rem",
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              border: "1px solid #e5e7eb",
-              background: "#ffffff",
-              color: "#111827",
-              cursor: "pointer"
-            }}
-          >
-            {copied ? "Kinopya na! ✅" : "Copy sa clipboard 📋"}
-          </button>
-        </div>
-
-        {/* Footer */}
-        <div
-          style={{
-            marginTop: "0.9rem",
-            fontSize: "0.7rem",
-            color: "#6b7280",
-            textAlign: "center"
-          }}
-        >
-          Pang-couple, pang-kids, pang-DGroup icebreaker. 😆
-        </div>
-      </div>
-    </main>
-  );
-}
+              fontSize: "2.1rem",
+              fontWeight: 800,
+              co
