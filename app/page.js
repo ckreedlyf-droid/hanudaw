@@ -13,7 +13,7 @@ const genres = [
   { value: "boomer", label: "Boomer" }
 ];
 
-// ---------- WORD LISTS (by level, shared across genres) ----------
+// ---------- WORD LISTS (by level) ----------
 
 const easyVerbs = [
   "laba", "hugas", "linis", "ayos", "tiklop",
@@ -81,7 +81,7 @@ const hardSubjects = [
   "bug", "glitch", "update", "patch", "feed"
 ];
 
-// ---------- GENRE WEIGHTS (favored words per genre) ----------
+// ---------- GENRE WEIGHTS ----------
 
 const genreVerbMap = {
   couples: new Set([
@@ -164,7 +164,7 @@ function getRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Genre = weighted, hindi hard filter
+// Genre = weighted, not hard filtered
 function getWeightedPool(base, genreValue, map) {
   if (genreValue === "all") return base;
   const set = map[genreValue];
@@ -180,9 +180,9 @@ function getWeightedPool(base, genreValue, map) {
 
 function getRandomWordStyle() {
   const hue = Math.floor(Math.random() * 360);
-  const lightness = 40 + Math.random() * 20; // 40–60
-  const bg = `hsl(${hue} 85% ${lightness}%)`;
-  const color = lightness > 55 ? "#111827" : "#f9fafb";
+  const lightness = 45 + Math.random() * 20; // 45–65
+  const bg = `hsl(${hue} 90% ${lightness}%)`;
+  const color = lightness > 55 ? "#020617" : "#f9fafb";
   return { bg, color };
 }
 
@@ -269,24 +269,30 @@ export default function Home() {
   };
 
   const levelButtonStyle = (active) => ({
-    padding: "0.4rem 1rem",
+    padding: "0.35rem 0.9rem",
     borderRadius: 999,
-    border: active ? "none" : "1px solid #e5e7eb",
-    fontSize: "0.8rem",
+    border: active ? "none" : "1px solid #4b5563",
+    fontSize: "0.78rem",
     fontWeight: 600,
     cursor: "pointer",
-    background: active ? "#111827" : "#ffffff",
-    color: active ? "#f9fafb" : "#4b5563"
+    background: active ? "#facc15" : "transparent",
+    color: active ? "#111827" : "#e5e7eb"
   });
 
   return (
     <>
       <main className="page">
-        <div className="card">
-          {/* Title */}
-          <header className="header">
-            <h1>Hanu Daw? 🤯</h1>
-            <p>Taglish mashup generator. Pang-couple, pang-kids, pang-DGroup. 😆</p>
+        <div className="machine">
+          {/* Header */}
+          <header className="machine-header">
+            <div className="title-row">
+              <span className="title-glow">Hanu Daw?</span>
+              <span className="badge">🎰 Arcade</span>
+            </div>
+            <p className="subtitle">
+              Taglish mashup generator. Pull the lever, tapos bahala na si
+              slot machine. 😆
+            </p>
           </header>
 
           {/* Controls */}
@@ -327,42 +333,50 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Squares */}
-          <section className="square-row">
-            <div
-              className={
-                isSpinning ? "square word-box slot-rolling" : "square word-box"
-              }
-              style={{
-                background: verbStyle.bg,
-                color: verbStyle.color
-              }}
-            >
-              {displayVerb}
+          {/* Slot machine window */}
+          <section className="slot-panel">
+            <div className="slot-top-glow" />
+            <div className="slot-window">
+              <div
+                className={
+                  isSpinning
+                    ? "slot-column slot-rolling"
+                    : "slot-column"
+                }
+                style={{
+                  background: verbStyle.bg,
+                  color: verbStyle.color
+                }}
+              >
+                {displayVerb}
+              </div>
+              <div
+                className={
+                  isSpinning
+                    ? "slot-column slot-rolling"
+                    : "slot-column"
+                }
+                style={{
+                  background: subjectStyle.bg,
+                  color: subjectStyle.color
+                }}
+              >
+                {displaySubject}
+              </div>
             </div>
-            <div
-              className={
-                isSpinning ? "square word-box slot-rolling" : "square word-box"
-              }
-              style={{
-                background: subjectStyle.bg,
-                color: subjectStyle.color
-              }}
-            >
-              {displaySubject}
-            </div>
+            <div className="slot-bottom-bar" />
           </section>
 
           {/* Details */}
           <section className="details">
             <p>
-              <span className="label">Verb:</span> <b>{verb}</b> ·{" "}
-              <span className="label">Subject:</span> <b>{subject}</b>
+              <span className="label">Verb</span> <b>{verb}</b> ·{" "}
+              <span className="label">Subject</span> <b>{subject}</b>
             </p>
             <p>
-              <span className="label">Genre:</span>{" "}
+              <span className="label">Genre</span>{" "}
               <b>{genres.find((g) => g.value === genre)?.label}</b> ·{" "}
-              <span className="label">Level:</span>{" "}
+              <span className="label">Level</span>{" "}
               <b>{level.toUpperCase()}</b>
             </p>
           </section>
@@ -370,13 +384,13 @@ export default function Home() {
           {/* Buttons */}
           <section className="buttons">
             <button
-              className="primary-btn"
+              className="lever-btn"
               onClick={shuffle}
               disabled={isSpinning}
             >
-              {isSpinning ? "Nagro-roll..." : "Hanu daw ulit? 🔁"}
+              {isSpinning ? "Rolling..." : "Hanu daw ulit? 🔁"}
             </button>
-            <button className="secondary-btn" onClick={copyToClipboard}>
+            <button className="copy-btn" onClick={copyToClipboard}>
               {copied ? "Kinopya na! ✅" : "Copy sa clipboard 📋"}
             </button>
           </section>
@@ -390,36 +404,66 @@ export default function Home() {
           align-items: center;
           justify-content: center;
           padding: 1.5rem;
-          background: radial-gradient(circle at top, #ffe4e6, #e0f2fe 35%, #f4f4f5 70%);
+          background: radial-gradient(
+              circle at top,
+              rgba(59, 130, 246, 0.35),
+              transparent 55%
+            ),
+            radial-gradient(
+              circle at bottom left,
+              rgba(236, 72, 153, 0.45),
+              transparent 55%
+            ),
+            #020617;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+          color: #e5e7eb;
         }
 
-        .card {
+        .machine {
           width: 100%;
-          max-width: 620px;
-          background: #ffffff;
-          border-radius: 32px;
-          padding: 1.8rem 1.8rem 1.6rem;
-          box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+          max-width: 640px;
+          background: radial-gradient(circle at top, #0b1120, #020617);
+          border-radius: 28px;
+          padding: 1.7rem 1.6rem 1.4rem;
+          box-shadow: 0 28px 80px rgba(0, 0, 0, 0.8);
+          border: 1px solid rgba(148, 163, 184, 0.15);
         }
 
-        .header {
-          text-align: center;
+        .machine-header {
+          text-align: left;
           margin-bottom: 1.4rem;
         }
 
-        .header h1 {
-          margin: 0;
-          font-size: 1.9rem;
-          font-weight: 900;
-          letter-spacing: 0.04em;
-          color: #111827;
+        .title-row {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
         }
 
-        .header p {
-          margin: 0.3rem 0 0;
-          font-size: 0.85rem;
-          color: #6b7280;
+        .title-glow {
+          font-size: 1.7rem;
+          font-weight: 900;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          background: linear-gradient(120deg, #f97316, #ec4899, #6366f1);
+          -webkit-background-clip: text;
+          color: transparent;
+          text-shadow: 0 0 18px rgba(236, 72, 153, 0.6);
+        }
+
+        .badge {
+          font-size: 0.75rem;
+          padding: 0.25rem 0.6rem;
+          border-radius: 999px;
+          background: rgba(15, 23, 42, 0.9);
+          border: 1px solid rgba(251, 191, 36, 0.8);
+          color: #facc15;
+        }
+
+        .subtitle {
+          margin-top: 0.35rem;
+          font-size: 0.8rem;
+          color: #9ca3af;
         }
 
         .controls {
@@ -427,7 +471,7 @@ export default function Home() {
           flex-wrap: wrap;
           gap: 1rem;
           align-items: flex-end;
-          margin-bottom: 1.4rem;
+          margin-bottom: 1.3rem;
         }
 
         .control-group {
@@ -438,51 +482,128 @@ export default function Home() {
         }
 
         .control-group label {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: #6b7280;
+          color: #9ca3af;
         }
 
         .control-group select {
           border-radius: 999px;
-          border: 1px solid #e5e7eb;
+          border: 1px solid #4b5563;
           padding: 0.45rem 0.9rem;
-          font-size: 0.85rem;
-          background: #ffffff;
-          color: #111827;
+          background: #020617;
+          color: #e5e7eb;
+          font-size: 0.82rem;
+          outline: none;
+        }
+
+        .control-group select:focus {
+          border-color: #f97316;
+          box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.5);
         }
 
         .level-group {
           display: flex;
-          gap: 0.5rem;
+          gap: 0.45rem;
           flex-wrap: wrap;
         }
 
-        .square-row {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.75rem;
-          margin-bottom: 1rem;
+        /* SLOT MACHINE */
+
+        .slot-panel {
+          margin-bottom: 1.1rem;
+          padding: 0.9rem 0.9rem 1rem;
+          border-radius: 20px;
+          background: radial-gradient(
+            circle at top,
+            rgba(59, 130, 246, 0.35),
+            rgba(15, 23, 42, 0.95)
+          );
+          box-shadow: 0 0 25px rgba(129, 140, 248, 0.45);
+          border: 1px solid rgba(148, 163, 184, 0.5);
+          position: relative;
         }
 
-        .square {
-          aspect-ratio: 1 / 1;
-          border-radius: 6px;
+        .slot-top-glow {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(
+            circle at top,
+            rgba(251, 191, 36, 0.35),
+            transparent 60%
+          );
+          opacity: 0.8;
+          pointer-events: none;
+        }
+
+        .slot-window {
+          position: relative;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.5rem;
+          padding: 0.6rem;
+          border-radius: 18px;
+          background: radial-gradient(circle at center, #020617, #000000);
+          box-shadow: inset 0 0 20px rgba(15, 23, 42, 1);
+        }
+
+        .slot-column {
+          aspect-ratio: 3 / 4;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 1.6rem;
+          font-size: 1.7rem;
           font-weight: 800;
           text-transform: lowercase;
-          box-shadow: 0 14px 35px rgba(15, 23, 42, 0.35);
+          text-shadow: 0 0 14px rgba(15, 23, 42, 0.9);
+          box-shadow: 0 0 16px rgba(15, 23, 42, 0.8);
+          border: 2px solid rgba(15, 23, 42, 0.9);
+        }
+
+        .slot-bottom-bar {
+          margin-top: 0.7rem;
+          height: 6px;
+          border-radius: 999px;
+          background: linear-gradient(
+            90deg,
+            #f97316,
+            #facc15,
+            #22c55e,
+            #38bdf8,
+            #a855f7
+          );
+          box-shadow: 0 0 12px rgba(236, 72, 153, 0.7);
+        }
+
+        .slot-rolling {
+          animation: slot-spin 0.18s linear infinite;
+        }
+
+        @keyframes slot-spin {
+          0% {
+            transform: translateY(30px);
+            filter: blur(1px);
+            opacity: 0.8;
+          }
+          50% {
+            transform: translateY(-30px);
+            filter: blur(0.5px);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(30px);
+            filter: blur(1px);
+            opacity: 0.8;
+          }
         }
 
         .details {
           text-align: center;
           font-size: 0.82rem;
-          color: #4b5563;
-          margin-bottom: 1.2rem;
+          color: #cbd5f5;
+          margin-bottom: 1.1rem;
         }
 
         .details p {
@@ -492,68 +613,52 @@ export default function Home() {
         .label {
           text-transform: uppercase;
           letter-spacing: 0.12em;
-          font-size: 0.7rem;
+          font-size: 0.68rem;
           color: #9ca3af;
         }
 
         .buttons {
           display: flex;
           flex-direction: column;
-          gap: 0.6rem;
+          gap: 0.55rem;
         }
 
-        .primary-btn {
+        .lever-btn {
           border: none;
           border-radius: 999px;
           padding: 0.85rem 1rem;
           font-size: 0.95rem;
-          font-weight: 600;
+          font-weight: 700;
           background: linear-gradient(135deg, #f97316, #ec4899, #6366f1);
           color: #f9fafb;
           cursor: pointer;
+          text-shadow: 0 0 10px rgba(15, 23, 42, 0.9);
+          box-shadow: 0 18px 40px rgba(236, 72, 153, 0.5);
         }
 
-        .primary-btn:disabled {
+        .lever-btn:disabled {
           cursor: not-allowed;
           opacity: 0.7;
+          box-shadow: none;
         }
 
-        .secondary-btn {
+        .copy-btn {
           border-radius: 999px;
           padding: 0.75rem 1rem;
           font-size: 0.9rem;
           font-weight: 500;
-          border: 1px solid #e5e7eb;
-          background: #ffffff;
-          color: #111827;
+          border: 1px solid rgba(148, 163, 184, 0.6);
+          background: rgba(15, 23, 42, 0.8);
+          color: #e5e7eb;
           cursor: pointer;
         }
 
-        .word-box.slot-rolling {
-          animation: slot-spin 0.25s linear infinite;
-        }
-
-        @keyframes slot-spin {
-          0% {
-            transform: translateY(20px);
-            opacity: 0.8;
+        @media (max-width: 640px) {
+          .machine {
+            padding: 1.4rem 1.2rem 1.2rem;
           }
-          50% {
-            transform: translateY(-20px);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(20px);
-            opacity: 0.8;
-          }
-        }
-
-        @media (max-width: 600px) {
-          .card {
-            padding: 1.4rem 1.2rem 1.3rem;
-          }
-          .square {
-            font-size: 1.3rem;
+          .slot-column {
+            font-size: 1.4rem;
           }
         }
       `}</style>
