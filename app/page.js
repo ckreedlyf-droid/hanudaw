@@ -2,40 +2,37 @@
 
 import Link from "next/link";
 
-export default function Home() {
+export default function ModeSelector() {
   return (
     <>
-      <main className="home">
+      <main className="page">
         <div className="card">
-          <h1 className="title">Hanu Daw? 🎲</h1>
+          <h1>Party Game Picker 🎉</h1>
           <p className="subtitle">
-            Pili ka ng party game. Perfect pang-couple, DGroup, barkada at family nights.
+            Pili ng game tapos sabog tawa na. Perfect pang-couple, barkada,
+            at DGroup icebreaker.
           </p>
 
-          <div className="game-grid">
-            <Link href="/hanu" className="game game-hanu">
-              <div className="game-emoji">🤯</div>
-              <h2>Hanu Daw?!</h2>
-              <p>Taglish mashup generator. Verb + subject na sobrang sabaw.</p>
-              <span className="pill">Word mashup</span>
+          <div className="buttons">
+            <Link href="/hanu" className="mode-btn hanu">
+              <span className="mode-title">Hanu Daw?! 🤯</span>
+              <span className="mode-desc">
+                Taglish mashup – verb + subject = kalat na sentence.
+              </span>
             </Link>
 
-            <Link href="/sorry" className="game game-sorry">
-              <div className="game-emoji">🎤</div>
-              <h2>Sorry What?!</h2>
-              <p>Kakanta ka ng random word. Hulaan ng iba kung ano yun.</p>
-              <span className="pill">Singing game</span>
+            <Link href="/sorry" className="mode-btn sorry">
+              <span className="mode-title">Sorry What?! 🎧</span>
+              <span className="mode-desc">
+                Pa-music, pa-headset, hulaan ang salitang kinakanta.
+              </span>
             </Link>
           </div>
-
-          <p className="footer-note">
-            Tip: I-on ang sounds sa settings ng bawat game para full experience. ✨
-          </p>
         </div>
       </main>
 
       <style jsx>{`
-        .home {
+        .page {
           min-height: 100vh;
           display: flex;
           align-items: center;
@@ -50,98 +47,83 @@ export default function Home() {
 
         .card {
           width: 100%;
-          max-width: 640px;
-          background: #fefeff;
-          border-radius: 24px;
-          padding: 1.8rem 1.6rem 1.4rem;
-          box-shadow: 0 22px 60px rgba(148, 163, 184, 0.45);
-          border: 1px solid #e4e4e7;
-          text-align: center;
+          max-width: 520px;
+          background: #ffffff;
+          border-radius: 26px;
+          padding: 1.8rem 1.5rem 1.6rem;
+          box-shadow: 0 20px 55px rgba(148, 163, 184, 0.6);
+          border: 1px solid #e5e7eb;
         }
 
-        .title {
-          margin: 0;
-          font-size: 2rem;
+        h1 {
+          margin: 0 0 0.4rem;
+          font-size: 1.9rem;
           font-weight: 900;
         }
 
         .subtitle {
-          margin: 0.5rem 0 1.4rem;
+          margin: 0 0 1.3rem;
           font-size: 0.9rem;
           color: #6b7280;
         }
 
-        .game-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 1rem;
-          margin-bottom: 1.2rem;
-        }
-
-        .game {
+        .buttons {
           display: flex;
           flex-direction: column;
-          gap: 0.3rem;
-          text-align: left;
-          padding: 1rem;
-          border-radius: 18px;
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
+          gap: 0.9rem;
+        }
+
+        .mode-btn {
+          display: flex;
+          flex-direction: column;
+          gap: 0.15rem;
           text-decoration: none;
+          padding: 0.9rem 1rem;
+          border-radius: 1rem;
           color: #111827;
+          border: 1px solid #e5e7eb;
+          background: #f9fafb;
           transition: transform 0.12s ease, box-shadow 0.12s ease,
-            border-color 0.12s ease, background 0.12s ease;
+            background 0.12s ease;
         }
 
-        .game:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 16px 35px rgba(148, 163, 184, 0.5);
-          border-color: #fb7185;
-          background: #fff7f7;
+        .mode-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 16px 35px rgba(148, 163, 184, 0.45);
+          background: #ffffff;
         }
 
-        .game-emoji {
-          font-size: 1.8rem;
-        }
-
-        .game h2 {
-          margin: 0;
-          font-size: 1.1rem;
+        .mode-title {
           font-weight: 800;
+          font-size: 1.05rem;
         }
 
-        .game p {
-          margin: 0;
-          font-size: 0.82rem;
+        .mode-desc {
+          font-size: 0.85rem;
           color: #6b7280;
         }
 
-        .pill {
-          margin-top: 0.4rem;
-          display: inline-block;
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          padding: 0.2rem 0.6rem;
-          border-radius: 999px;
-          background: #fee2e2;
-          color: #b91c1c;
+        .mode-btn.hanu {
+          border-color: #fb923c;
+          background: linear-gradient(
+            135deg,
+            rgba(248, 113, 113, 0.15),
+            rgba(251, 146, 60, 0.15)
+          );
         }
 
-        .game-sorry .pill {
-          background: #dbeafe;
-          color: #1d4ed8;
-        }
-
-        .footer-note {
-          margin: 0;
-          font-size: 0.78rem;
-          color: #9ca3af;
+        .mode-btn.sorry {
+          border-color: #a855f7;
+          background: linear-gradient(
+            135deg,
+            rgba(129, 140, 248, 0.15),
+            rgba(244, 114, 182, 0.15)
+          );
         }
 
         @media (max-width: 640px) {
-          .game-grid {
-            grid-template-columns: 1fr;
+          .card {
+            padding: 1.6rem 1.3rem 1.4rem;
           }
         }
       `}</style>
