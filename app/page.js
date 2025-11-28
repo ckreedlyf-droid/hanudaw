@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
 
 const genres = [
   { value: "all", label: "All" },
@@ -172,8 +171,6 @@ function normalizeGenreFromParam(raw) {
   if (lower.includes("millen")) return "millennial";
   if (lower.includes("boom")) return "boomer";
   if (lower.includes("all")) return "all";
-
-  // "Gen Z" or "genz"
   if (lower.includes("gen")) return "genz";
 
   return "genz";
@@ -208,7 +205,7 @@ function getWeightedPool(base, genreValue, map) {
 
 function getRandomNoteStyle() {
   const hue = Math.floor(Math.random() * 360);
-  const lightness = 80 + Math.random() * 10; // pastel 80–90
+  const lightness = 80 + Math.random() * 10;
   const bg = `hsl(${hue} 95% ${lightness}%)`;
   const color = "#111827";
   return { bg, color };
@@ -217,17 +214,10 @@ function getRandomNoteStyle() {
 // ---------- COMPONENT ----------
 
 export default function Home() {
-  const searchParams = useSearchParams();
-
-  const [genre, setGenre] = useState(() =>
-    normalizeGenreFromParam(searchParams.get("genre"))
-  );
-  const [level, setLevel] = useState(() =>
-    normalizeLevelFromParam(searchParams.get("level"))
-  );
-
-  const isEmbeddedFromApp =
-    !!searchParams.get("genre") || !!searchParams.get("level");
+  // defaults kapag direct sa browser
+  const [genre, setGenre] = useState("all");
+  const [level, setLevel] = useState("easy");
+  const [isEmbeddedFromApp, setIsEmbeddedFromApp] = useState(false);
 
   const [verb, setVerb] = useState("laba");
   const [subject, setSubject] = useState("paa");
@@ -242,14 +232,26 @@ export default function Home() {
   const spinIntervalRef = useRef(null);
   const spinTimeoutRef = useRef(null);
 
-  // sync kapag nagbago URL (galing Android)
+  // 🔗 Basahin ang ?genre= & ?level= from URL (client side only)
   useEffect(() => {
-    const genreParam = searchParams.get("genre");
-    const levelParam = searchParams.get("level");
+    if (typeof window === "undefined") return;
 
-    if (genreParam) setGenre(normalizeGenreFromParam(genreParam));
-    if (levelParam) setLevel(normalizeLevelFromParam(levelParam));
-  }, [searchParams]);
+    const params = new URLSearchParams(window.location.search);
+    const genreParam = params.get("genre");
+    const levelParam = params.get("level");
+
+    if (genreParam) {
+      setGenre(normalizeGenreFromParam(genreParam));
+      setIsEmbeddedFromApp(true);
+    }
+    if (levelParam) {
+      setLevel(normalizeLevelFromParam(levelParam));
+      setIsEmbeddedFromApp(true);
+    }
+    if (!genreParam && !levelParam) {
+      setIsEmbeddedFromApp(false);
+    }
+  }, []);
 
   // cleanup spinner timers
   useEffect(() => {
@@ -343,7 +345,7 @@ export default function Home() {
             </p>
           </header>
 
-          {/* Controls – only show kapag hindi galing Android app */}
+          {/* Controls – show lang kapag hindi galing Android app */}
           {!isEmbeddedFromApp && (
             <section className="controls">
               <div className="control-group">
