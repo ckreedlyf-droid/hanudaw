@@ -423,39 +423,50 @@ export default function Home() {
             textAlign: "center",
             background: cardBg,
             transition: "background 0.3s ease"
+            style={{
+  background: cardBg,
+  transition: "background 0.3s ease",
+  color: "white",
+  mixBlendMode: "normal",
+  isolation: "isolate", // fixes blend bugs
+}}
+
           }}
         >
-          <div
-            style={{
-              fontSize: "2.1rem",
-              fontWeight: 800,
-              color: "#f9fafb",
-              wordBreak: "break-word",
-              lineHeight: 1.1
-            }}
-          >
-            {phrase}
-          </div>
-          <div
-            style={{
-              marginTop: "0.75rem",
-              fontSize: "0.8rem",
-              color: "#e5e7eb"
-            }}
-          >
-            Verb: <b>{verb}</b> • Subject: <b>{subject}</b>
-          </div>
-          <div
-            style={{
-              marginTop: "0.35rem",
-              fontSize: "0.7rem",
-              color: "#cbd5f5"
-            }}
-          >
-            Genre: <b>{genres.find((g) => g.value === genre)?.label}</b> · Level:{" "}
-            <b>{level.toUpperCase()}</b>
-          </div>
-        </div>
+       <div
+  style={{
+    fontSize: "2.1rem",
+    fontWeight: 800,
+    color: "white",
+    mixBlendMode: "difference",
+    wordBreak: "break-word",
+    lineHeight: 1.1
+  }}
+>
+  {phrase}
+<div
+  style={{
+    marginTop: "0.75rem",
+    fontSize: "0.8rem",
+    color: "white",
+    mixBlendMode: "difference"
+  }}
+>
+  Verb: <b>{verb}</b> • Subject: <b>{subject}</b>
+</div>
+
+<div
+  style={{
+    marginTop: "0.35rem",
+    fontSize: "0.7rem",
+    color: "white",
+    mixBlendMode: "difference"
+  }}
+>
+  Genre: <b>{genres.find((g) => g.value === genre)?.label}</b> · Level:{" "}
+  <b>{level.toUpperCase()}</b>
+</div>
+
 
         {/* Buttons */}
         <div
