@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 
 const genres = [
   { value: "all", label: "All" },
@@ -158,32 +158,6 @@ const genreSubjectMap = {
   ])
 };
 
-// ---------- URL PARAM HELPERS (Android → Web) ----------
-
-function normalizeGenreFromParam(raw) {
-  if (!raw) return "genz";
-  const lower = String(raw).toLowerCase();
-
-  if (lower.includes("couple")) return "couples";
-  if (lower.includes("kid")) return "kids";
-  if (lower.includes("christ")) return "christian";
-  if (lower.includes("social")) return "social";
-  if (lower.includes("millen")) return "millennial";
-  if (lower.includes("boom")) return "boomer";
-  if (lower.includes("all")) return "all";
-  if (lower.includes("gen")) return "genz";
-
-  return "genz";
-}
-
-function normalizeLevelFromParam(raw) {
-  if (!raw) return "easy";
-  const lower = String(raw).toLowerCase();
-  if (lower.startsWith("med")) return "medium";
-  if (lower.startsWith("hard")) return "hard";
-  return "easy";
-}
-
 // ---------- HELPERS ----------
 
 function getRandom(arr) {
@@ -200,12 +174,13 @@ function getWeightedPool(base, genreValue, map) {
 
   if (!inGenre.length) return base;
 
+  // 3x weight for genre-matching words
   return [...inGenre, ...inGenre, ...inGenre, ...outGenre];
 }
 
 function getRandomNoteStyle() {
   const hue = Math.floor(Math.random() * 360);
-  const lightness = 80 + Math.random() * 10;
+  const lightness = 80 + Math.random() * 10; // pastel 80–90
   const bg = `hsl(${hue} 95% ${lightness}%)`;
   const color = "#111827";
   return { bg, color };
@@ -214,10 +189,8 @@ function getRandomNoteStyle() {
 // ---------- COMPONENT ----------
 
 export default function Home() {
-  // defaults kapag direct sa browser
   const [genre, setGenre] = useState("all");
   const [level, setLevel] = useState("easy");
-  const [isEmbeddedFromApp, setIsEmbeddedFromApp] = useState(false);
 
   const [verb, setVerb] = useState("laba");
   const [subject, setSubject] = useState("paa");
@@ -229,36 +202,63 @@ export default function Home() {
   const [verbStyle, setVerbStyle] = useState(getRandomNoteStyle());
   const [subjectStyle, setSubjectStyle] = useState(getRandomNoteStyle());
 
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [countdown, setCountdown] = useState(0);
+
   const spinIntervalRef = useRef(null);
   const spinTimeoutRef = useRef(null);
 
-  // 🔗 Basahin ang ?genre= & ?level= from URL (client side only)
+  const clickSoundRef = useRef(null);
+  const rollSoundRef = useRef(null);
+  const dingSoundRef = useRef(null);
+
+  // Setup & cleanup
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const params = new URLSearchParams(window.location.search);
-    const genreParam = params.get("genre");
-    const levelParam = params.get("level");
-
-    if (genreParam) {
-      setGenre(normalizeGenreFromParam(genreParam));
-      setIsEmbeddedFromApp(true);
+    // Setup audio only on client
+    if (typeof window !== "undefined") {
+      clickSoundRef.current = new Audio("/sounds/click.mp3");
+      rollSoundRef.current = new Audio("/sounds/roll.mp3");
+      rollSoundRef.current.loop = true;
+      dingSoundRef.current = new Audio("/sounds/ding.mp3");
     }
-    if (levelParam) {
-      setLevel(normalizeLevelFromParam(levelParam));
-      setIsEmbeddedFromApp(true);
-    }
-    if (!genreParam && !levelParam) {
-      setIsEmbeddedFromApp(false);
-    }
-  }, []);
 
-  // cleanup spinner timers
-  useEffect(() => {
     return () => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
       if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
+
+      [clickSoundRef, rollSoundRef, dingSoundRef].forEach((ref) => {
+        if (ref.current) {
+          ref.current.pause();
+        }
+      });
     };
+  }, []);
+
+  const playSound = useCallback(
+    (type) => {
+      if (!soundEnabled) return;
+      let audioRef = null;
+      if (type === "click") audioRef = clickSoundRef;
+      if (type === "roll") audioRef = rollSoundRef;
+      if (type === "ding") audioRef = dingSoundRef;
+      const audio = audioRef?.current;
+      if (!audio) return;
+      try {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      } catch {
+        // ignore
+      }
+    },
+    [soundEnabled]
+  );
+
+  const stopRollSound = useCallback(() => {
+    const audio = rollSoundRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
   }, []);
 
   const { verbPool, subjectPool } = useMemo(() => {
@@ -279,7 +279,7 @@ export default function Home() {
     return { verbPool: verbs, subjectPool: subjects };
   }, [level, genre]);
 
-  const shuffle = () => {
+  const shuffle = useCallback(() => {
     if (isSpinning) return;
     if (!verbPool.length || !subjectPool.length) return;
 
@@ -289,6 +289,9 @@ export default function Home() {
     setIsSpinning(true);
     setCopied(false);
 
+    playSound("click");
+    playSound("roll");
+
     spinIntervalRef.current = setInterval(() => {
       setDisplayVerb(getRandom(verbPool));
       setDisplaySubject(getRandom(subjectPool));
@@ -296,6 +299,7 @@ export default function Home() {
 
     spinTimeoutRef.current = setTimeout(() => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
+      stopRollSound();
 
       setVerb(finalVerb);
       setSubject(finalSubject);
@@ -304,8 +308,33 @@ export default function Home() {
       setIsSpinning(false);
       setVerbStyle(getRandomNoteStyle());
       setSubjectStyle(getRandomNoteStyle());
+      playSound("ding");
     }, 900);
-  };
+  }, [
+    isSpinning,
+    verbPool,
+    subjectPool,
+    playSound,
+    stopRollSound
+  ]);
+
+  // Auto-roll timer
+  useEffect(() => {
+    if (!countdown || countdown <= 0) return;
+
+    const id = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          // trigger auto shuffle
+          shuffle();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [countdown, shuffle]);
 
   const copyToClipboard = async () => {
     try {
@@ -329,6 +358,16 @@ export default function Home() {
     boxShadow: active ? "0 4px 10px rgba(248, 113, 113, 0.5)" : "none"
   });
 
+  const startPresetTimer = (seconds) => {
+    if (seconds <= 0) return;
+    setCountdown(seconds);
+  };
+
+  const applyCustomTimer = () => {
+    if (!timerSeconds || timerSeconds <= 0) return;
+    setCountdown(timerSeconds);
+  };
+
   return (
     <>
       <main className="page">
@@ -345,45 +384,43 @@ export default function Home() {
             </p>
           </header>
 
-          {/* Controls – show lang kapag hindi galing Android app */}
-          {!isEmbeddedFromApp && (
-            <section className="controls">
-              <div className="control-group">
-                <label>Genre</label>
-                <select
-                  value={genre}
-                  onChange={(e) => setGenre(e.target.value)}
-                >
-                  {genres.map((g) => (
-                    <option key={g.value} value={g.value}>
-                      {g.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {/* Controls */}
+          <section className="controls">
+            <div className="control-group">
+              <label>Genre</label>
+              <select
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+              >
+                {genres.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div className="level-group">
-                <button
-                  style={levelButtonStyle(level === "easy")}
-                  onClick={() => setLevel("easy")}
-                >
-                  Easy
-                </button>
-                <button
-                  style={levelButtonStyle(level === "medium")}
-                  onClick={() => setLevel("medium")}
-                >
-                  Medium
-                </button>
-                <button
-                  style={levelButtonStyle(level === "hard")}
-                  onClick={() => setLevel("hard")}
-                >
-                  Hard
-                </button>
-              </div>
-            </section>
-          )}
+            <div className="level-group">
+              <button
+                style={levelButtonStyle(level === "easy")}
+                onClick={() => setLevel("easy")}
+              >
+                Easy
+              </button>
+              <button
+                style={levelButtonStyle(level === "medium")}
+                onClick={() => setLevel("medium")}
+              >
+                Medium
+              </button>
+              <button
+                style={levelButtonStyle(level === "hard")}
+                onClick={() => setLevel("hard")}
+              >
+                Hard
+              </button>
+            </div>
+          </section>
 
           {/* Sticky notes area */}
           <section className="notes-area">
@@ -444,6 +481,59 @@ export default function Home() {
             <button className="secondary-btn" onClick={copyToClipboard}>
               {copied ? "Kinopya na! ✅" : "Copy sa clipboard 📋"}
             </button>
+          </section>
+
+          {/* Timer & Sound controls */}
+          <section className="timer-sound-wrapper">
+            <div className="timer-controls">
+              <div className="timer-header">
+                <span className="timer-title">⏱ Timer</span>
+                <span className="timer-sub">
+                  Auto-roll para di kayo maubusan ng tanong
+                </span>
+              </div>
+
+              <div className="timer-buttons">
+                <button onClick={() => startPresetTimer(10)}>10s</button>
+                <button onClick={() => startPresetTimer(20)}>20s</button>
+                <button onClick={() => startPresetTimer(30)}>30s</button>
+              </div>
+
+              <div className="timer-custom">
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Custom seconds..."
+                  value={timerSeconds || ""}
+                  onChange={(e) =>
+                    setTimerSeconds(Number(e.target.value) || 0)
+                  }
+                />
+                <button onClick={applyCustomTimer}>Set Timer</button>
+              </div>
+
+              {countdown > 0 && (
+                <p className="timer-countdown">
+                  Next auto-roll in <b>{countdown}s</b> ⏳
+                </p>
+              )}
+            </div>
+
+            <div className="sound-toggle">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={soundEnabled}
+                  onChange={() => setSoundEnabled((v) => !v)}
+                />
+                <span className="sound-label">
+                  {soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF"}
+                </span>
+              </label>
+              <p className="sound-hint">
+                Tip: I-mute kung nasa church, office, or tulog na si baby. 😅
+              </p>
+            </div>
           </section>
         </div>
       </main>
@@ -554,11 +644,10 @@ export default function Home() {
 
         .notes-area {
           position: relative;
-          padding: 1.1rem 0.6rem 1.0rem;
+          padding: 1.1rem 0.6rem 1rem;
           margin-bottom: 1.1rem;
           border-radius: 20px;
-          background:
-            linear-gradient(135deg, #f9fafb, #fefce8);
+          background: linear-gradient(135deg, #f9fafb, #fefce8);
           box-shadow: inset 0 0 0 1px #e5e7eb;
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -649,6 +738,7 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           gap: 0.6rem;
+          margin-bottom: 1rem;
         }
 
         .primary-btn {
@@ -680,6 +770,117 @@ export default function Home() {
           cursor: pointer;
         }
 
+        .timer-sound-wrapper {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+          margin-top: 0.4rem;
+        }
+
+        .timer-controls {
+          flex: 2 1 230px;
+          border-radius: 16px;
+          padding: 0.75rem 0.9rem;
+          background: #f9fafb;
+          border: 1px dashed #e5e7eb;
+        }
+
+        .timer-header {
+          margin-bottom: 0.4rem;
+        }
+
+        .timer-title {
+          font-size: 0.8rem;
+          font-weight: 700;
+        }
+
+        .timer-sub {
+          display: block;
+          font-size: 0.72rem;
+          color: #6b7280;
+        }
+
+        .timer-buttons {
+          display: flex;
+          gap: 0.35rem;
+          margin-bottom: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .timer-buttons button {
+          border-radius: 999px;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+          padding: 0.3rem 0.7rem;
+          font-size: 0.78rem;
+          cursor: pointer;
+        }
+
+        .timer-buttons button:hover {
+          border-color: #fb7185;
+        }
+
+        .timer-custom {
+          display: flex;
+          gap: 0.4rem;
+          align-items: center;
+          margin-bottom: 0.3rem;
+        }
+
+        .timer-custom input {
+          flex: 1;
+          border-radius: 999px;
+          border: 1px solid #e5e7eb;
+          padding: 0.3rem 0.7rem;
+          font-size: 0.78rem;
+        }
+
+        .timer-custom button {
+          border-radius: 999px;
+          border: none;
+          background: #f97316;
+          color: #ffffff;
+          padding: 0.35rem 0.8rem;
+          font-size: 0.78rem;
+          cursor: pointer;
+        }
+
+        .timer-countdown {
+          font-size: 0.78rem;
+          color: #4b5563;
+        }
+
+        .sound-toggle {
+          flex: 1 1 160px;
+          border-radius: 16px;
+          padding: 0.75rem 0.9rem;
+          background: #fff7ed;
+          border: 1px dashed #fed7aa;
+        }
+
+        .sound-toggle label {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          font-size: 0.82rem;
+          font-weight: 600;
+        }
+
+        .sound-toggle input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+        }
+
+        .sound-label {
+          user-select: none;
+        }
+
+        .sound-hint {
+          margin: 0.35rem 0 0;
+          font-size: 0.72rem;
+          color: #92400e;
+        }
+
         @media (max-width: 640px) {
           .board-card {
             padding: 1.5rem 1.3rem 1.3rem;
@@ -689,6 +890,9 @@ export default function Home() {
           }
           .note {
             min-height: 120px;
+          }
+          .timer-sound-wrapper {
+            flex-direction: column;
           }
         }
       `}</style>
