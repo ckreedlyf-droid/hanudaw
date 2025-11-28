@@ -164,7 +164,6 @@ function getRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Genre = weighted, not hard filtered
 function getWeightedPool(base, genreValue, map) {
   if (genreValue === "all") return base;
   const set = map[genreValue];
@@ -178,11 +177,11 @@ function getWeightedPool(base, genreValue, map) {
   return [...inGenre, ...inGenre, ...inGenre, ...outGenre];
 }
 
-function getRandomWordStyle() {
+function getRandomNoteStyle() {
   const hue = Math.floor(Math.random() * 360);
-  const lightness = 45 + Math.random() * 20; // 45–65
-  const bg = `hsl(${hue} 90% ${lightness}%)`;
-  const color = lightness > 55 ? "#020617" : "#f9fafb";
+  const lightness = 80 + Math.random() * 10; // pastel 80–90
+  const bg = `hsl(${hue} 95% ${lightness}%)`;
+  const color = "#111827";
   return { bg, color };
 }
 
@@ -199,8 +198,8 @@ export default function Home() {
 
   const [copied, setCopied] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [verbStyle, setVerbStyle] = useState(getRandomWordStyle());
-  const [subjectStyle, setSubjectStyle] = useState(getRandomWordStyle());
+  const [verbStyle, setVerbStyle] = useState(getRandomNoteStyle());
+  const [subjectStyle, setSubjectStyle] = useState(getRandomNoteStyle());
 
   const spinIntervalRef = useRef(null);
   const spinTimeoutRef = useRef(null);
@@ -243,7 +242,7 @@ export default function Home() {
     spinIntervalRef.current = setInterval(() => {
       setDisplayVerb(getRandom(verbPool));
       setDisplaySubject(getRandom(subjectPool));
-    }, 70);
+    }, 80);
 
     spinTimeoutRef.current = setTimeout(() => {
       if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
@@ -253,9 +252,9 @@ export default function Home() {
       setDisplayVerb(finalVerb);
       setDisplaySubject(finalSubject);
       setIsSpinning(false);
-      setVerbStyle(getRandomWordStyle());
-      setSubjectStyle(getRandomWordStyle());
-    }, 800);
+      setVerbStyle(getRandomNoteStyle());
+      setSubjectStyle(getRandomNoteStyle());
+    }, 900);
   };
 
   const copyToClipboard = async () => {
@@ -269,29 +268,30 @@ export default function Home() {
   };
 
   const levelButtonStyle = (active) => ({
-    padding: "0.35rem 0.9rem",
+    padding: "0.4rem 0.9rem",
     borderRadius: 999,
-    border: active ? "none" : "1px solid #4b5563",
+    border: active ? "none" : "1px solid #d4d4d8",
     fontSize: "0.78rem",
     fontWeight: 600,
     cursor: "pointer",
-    background: active ? "#facc15" : "transparent",
-    color: active ? "#111827" : "#e5e7eb"
+    background: active ? "#fb7185" : "#ffffff",
+    color: active ? "#ffffff" : "#4b5563",
+    boxShadow: active ? "0 4px 10px rgba(248, 113, 113, 0.5)" : "none"
   });
 
   return (
     <>
       <main className="page">
-        <div className="machine">
+        <div className="board-card">
           {/* Header */}
-          <header className="machine-header">
-            <div className="title-row">
-              <span className="title-glow">Hanu Daw?</span>
-              <span className="badge">🎰 Arcade</span>
+          <header className="header">
+            <div className="title-wrapper">
+              <h1>Hanu Daw? 🤯</h1>
+              <div className="underline" />
             </div>
-            <p className="subtitle">
-              Taglish mashup generator. Pull the lever, tapos bahala na si
-              slot machine. 😆
+            <p>
+              Taglish mashup generator na parang sticky notes sa ref. Pang-couple,
+              pang-kids, pang-DGroup icebreaker. 🧸
             </p>
           </header>
 
@@ -333,38 +333,37 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Slot machine window */}
-          <section className="slot-panel">
-            <div className="slot-top-glow" />
-            <div className="slot-window">
-              <div
-                className={
-                  isSpinning
-                    ? "slot-column slot-rolling"
-                    : "slot-column"
-                }
-                style={{
-                  background: verbStyle.bg,
-                  color: verbStyle.color
-                }}
-              >
-                {displayVerb}
-              </div>
-              <div
-                className={
-                  isSpinning
-                    ? "slot-column slot-rolling"
-                    : "slot-column"
-                }
-                style={{
-                  background: subjectStyle.bg,
-                  color: subjectStyle.color
-                }}
-              >
-                {displaySubject}
-              </div>
+          {/* Sticky notes area */}
+          <section className="notes-area">
+            <div
+              className={
+                isSpinning ? "note note-left note-rolling" : "note note-left"
+              }
+              style={{
+                background: verbStyle.bg,
+                color: verbStyle.color
+              }}
+            >
+              <span className="note-pin">📌</span>
+              <span className="note-label">verb</span>
+              <span className="note-word">{displayVerb}</span>
             </div>
-            <div className="slot-bottom-bar" />
+
+            <div
+              className={
+                isSpinning
+                  ? "note note-right note-rolling"
+                  : "note note-right"
+              }
+              style={{
+                background: subjectStyle.bg,
+                color: subjectStyle.color
+              }}
+            >
+              <span className="note-pin">📌</span>
+              <span className="note-label">subject</span>
+              <span className="note-word">{displaySubject}</span>
+            </div>
           </section>
 
           {/* Details */}
@@ -384,13 +383,13 @@ export default function Home() {
           {/* Buttons */}
           <section className="buttons">
             <button
-              className="lever-btn"
+              className="primary-btn"
               onClick={shuffle}
               disabled={isSpinning}
             >
-              {isSpinning ? "Rolling..." : "Hanu daw ulit? 🔁"}
+              {isSpinning ? "Nagpapalit ng notes..." : "Hanu daw ulit? 🔁"}
             </button>
-            <button className="copy-btn" onClick={copyToClipboard}>
+            <button className="secondary-btn" onClick={copyToClipboard}>
               {copied ? "Kinopya na! ✅" : "Copy sa clipboard 📋"}
             </button>
           </section>
@@ -404,66 +403,58 @@ export default function Home() {
           align-items: center;
           justify-content: center;
           padding: 1.5rem;
-          background: radial-gradient(
-              circle at top,
-              rgba(59, 130, 246, 0.35),
-              transparent 55%
-            ),
-            radial-gradient(
-              circle at bottom left,
-              rgba(236, 72, 153, 0.45),
-              transparent 55%
-            ),
-            #020617;
+          background:
+            radial-gradient(circle at top left, #fee2e2, transparent 55%),
+            radial-gradient(circle at bottom right, #bfdbfe, transparent 55%),
+            #fefce8;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-          color: #e5e7eb;
+          color: #111827;
         }
 
-        .machine {
+        .board-card {
           width: 100%;
           max-width: 640px;
-          background: radial-gradient(circle at top, #0b1120, #020617);
-          border-radius: 28px;
-          padding: 1.7rem 1.6rem 1.4rem;
-          box-shadow: 0 28px 80px rgba(0, 0, 0, 0.8);
-          border: 1px solid rgba(148, 163, 184, 0.15);
+          background: #fefeff;
+          border-radius: 26px;
+          padding: 1.8rem 1.6rem 1.5rem;
+          box-shadow: 0 22px 60px rgba(148, 163, 184, 0.5);
+          border: 1px solid #e4e4e7;
         }
 
-        .machine-header {
-          text-align: left;
+        .header {
           margin-bottom: 1.4rem;
+          text-align: left;
         }
 
-        .title-row {
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
+        .title-wrapper {
+          display: inline-block;
+          position: relative;
+          padding-bottom: 0.35rem;
         }
 
-        .title-glow {
-          font-size: 1.7rem;
+        .header h1 {
+          margin: 0;
+          font-size: 1.9rem;
           font-weight: 900;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          background: linear-gradient(120deg, #f97316, #ec4899, #6366f1);
-          -webkit-background-clip: text;
-          color: transparent;
-          text-shadow: 0 0 18px rgba(236, 72, 153, 0.6);
+          letter-spacing: 0.02em;
         }
 
-        .badge {
-          font-size: 0.75rem;
-          padding: 0.25rem 0.6rem;
+        .underline {
+          position: absolute;
+          left: -0.2rem;
+          right: -0.2rem;
+          bottom: 0;
+          height: 8px;
           border-radius: 999px;
-          background: rgba(15, 23, 42, 0.9);
-          border: 1px solid rgba(251, 191, 36, 0.8);
-          color: #facc15;
+          background: #fef08a;
+          opacity: 0.9;
+          transform: rotate(-1deg);
         }
 
-        .subtitle {
-          margin-top: 0.35rem;
-          font-size: 0.8rem;
-          color: #9ca3af;
+        .header p {
+          margin: 0.5rem 0 0;
+          font-size: 0.85rem;
+          color: #6b7280;
         }
 
         .controls {
@@ -471,7 +462,7 @@ export default function Home() {
           flex-wrap: wrap;
           gap: 1rem;
           align-items: flex-end;
-          margin-bottom: 1.3rem;
+          margin-bottom: 1.4rem;
         }
 
         .control-group {
@@ -483,126 +474,111 @@ export default function Home() {
 
         .control-group label {
           font-size: 0.7rem;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
           color: #9ca3af;
         }
 
         .control-group select {
           border-radius: 999px;
-          border: 1px solid #4b5563;
-          padding: 0.45rem 0.9rem;
-          background: #020617;
-          color: #e5e7eb;
-          font-size: 0.82rem;
+          border: 1px solid #d4d4d8;
+          padding: 0.45rem 0.85rem;
+          font-size: 0.85rem;
+          background: #ffffff;
+          color: #111827;
           outline: none;
         }
 
         .control-group select:focus {
-          border-color: #f97316;
-          box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.5);
+          border-color: #fb7185;
+          box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.25);
         }
 
         .level-group {
           display: flex;
-          gap: 0.45rem;
+          gap: 0.5rem;
           flex-wrap: wrap;
         }
 
-        /* SLOT MACHINE */
-
-        .slot-panel {
+        .notes-area {
+          position: relative;
+          padding: 1.1rem 0.6rem 1.0rem;
           margin-bottom: 1.1rem;
-          padding: 0.9rem 0.9rem 1rem;
           border-radius: 20px;
-          background: radial-gradient(
-            circle at top,
-            rgba(59, 130, 246, 0.35),
-            rgba(15, 23, 42, 0.95)
-          );
-          box-shadow: 0 0 25px rgba(129, 140, 248, 0.45);
-          border: 1px solid rgba(148, 163, 184, 0.5);
-          position: relative;
-        }
-
-        .slot-top-glow {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(
-            circle at top,
-            rgba(251, 191, 36, 0.35),
-            transparent 60%
-          );
-          opacity: 0.8;
-          pointer-events: none;
-        }
-
-        .slot-window {
-          position: relative;
+          background:
+            linear-gradient(135deg, #f9fafb, #fefce8);
+          box-shadow: inset 0 0 0 1px #e5e7eb;
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.5rem;
-          padding: 0.6rem;
-          border-radius: 18px;
-          background: radial-gradient(circle at center, #020617, #000000);
-          box-shadow: inset 0 0 20px rgba(15, 23, 42, 1);
+          gap: 0.9rem;
         }
 
-        .slot-column {
-          aspect-ratio: 3 / 4;
-          border-radius: 10px;
+        .note {
+          position: relative;
+          min-height: 140px;
+          border-radius: 12px;
+          padding: 0.7rem 0.8rem 0.9rem;
+          box-shadow: 0 14px 28px rgba(148, 163, 184, 0.7);
+          transform-origin: center top;
           display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.7rem;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: flex-end;
+        }
+
+        .note-left {
+          transform: rotate(-3deg);
+        }
+
+        .note-right {
+          transform: rotate(2.5deg);
+        }
+
+        .note-pin {
+          position: absolute;
+          top: 0.4rem;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 1rem;
+        }
+
+        .note-label {
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: rgba(55, 65, 81, 0.7);
+        }
+
+        .note-word {
+          font-size: 1.5rem;
           font-weight: 800;
           text-transform: lowercase;
-          text-shadow: 0 0 14px rgba(15, 23, 42, 0.9);
-          box-shadow: 0 0 16px rgba(15, 23, 42, 0.8);
-          border: 2px solid rgba(15, 23, 42, 0.9);
+          margin-top: 0.2rem;
         }
 
-        .slot-bottom-bar {
-          margin-top: 0.7rem;
-          height: 6px;
-          border-radius: 999px;
-          background: linear-gradient(
-            90deg,
-            #f97316,
-            #facc15,
-            #22c55e,
-            #38bdf8,
-            #a855f7
-          );
-          box-shadow: 0 0 12px rgba(236, 72, 153, 0.7);
+        .note-rolling {
+          animation: note-slide 0.22s linear infinite;
         }
 
-        .slot-rolling {
-          animation: slot-spin 0.18s linear infinite;
-        }
-
-        @keyframes slot-spin {
+        @keyframes note-slide {
           0% {
-            transform: translateY(30px);
-            filter: blur(1px);
-            opacity: 0.8;
+            transform: translateY(8px) rotate(-2deg);
+            opacity: 0.9;
           }
           50% {
-            transform: translateY(-30px);
-            filter: blur(0.5px);
+            transform: translateY(-8px) rotate(2deg);
             opacity: 1;
           }
           100% {
-            transform: translateY(30px);
-            filter: blur(1px);
-            opacity: 0.8;
+            transform: translateY(8px) rotate(-2deg);
+            opacity: 0.9;
           }
         }
 
         .details {
           text-align: center;
-          font-size: 0.82rem;
-          color: #cbd5f5;
+          font-size: 0.83rem;
+          color: #4b5563;
           margin-bottom: 1.1rem;
         }
 
@@ -620,45 +596,47 @@ export default function Home() {
         .buttons {
           display: flex;
           flex-direction: column;
-          gap: 0.55rem;
+          gap: 0.6rem;
         }
 
-        .lever-btn {
+        .primary-btn {
           border: none;
           border-radius: 999px;
           padding: 0.85rem 1rem;
           font-size: 0.95rem;
-          font-weight: 700;
-          background: linear-gradient(135deg, #f97316, #ec4899, #6366f1);
-          color: #f9fafb;
+          font-weight: 600;
+          background: linear-gradient(135deg, #fb7185, #f97316);
+          color: #ffffff;
           cursor: pointer;
-          text-shadow: 0 0 10px rgba(15, 23, 42, 0.9);
-          box-shadow: 0 18px 40px rgba(236, 72, 153, 0.5);
+          box-shadow: 0 14px 30px rgba(248, 113, 113, 0.5);
         }
 
-        .lever-btn:disabled {
-          cursor: not-allowed;
+        .primary-btn:disabled {
           opacity: 0.7;
+          cursor: not-allowed;
           box-shadow: none;
         }
 
-        .copy-btn {
+        .secondary-btn {
           border-radius: 999px;
           padding: 0.75rem 1rem;
           font-size: 0.9rem;
           font-weight: 500;
-          border: 1px solid rgba(148, 163, 184, 0.6);
-          background: rgba(15, 23, 42, 0.8);
-          color: #e5e7eb;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+          color: #111827;
           cursor: pointer;
         }
 
         @media (max-width: 640px) {
-          .machine {
-            padding: 1.4rem 1.2rem 1.2rem;
+          .board-card {
+            padding: 1.5rem 1.3rem 1.3rem;
           }
-          .slot-column {
-            font-size: 1.4rem;
+          .notes-area {
+            grid-template-columns: 1fr;
+          }
+          .note {
+            min-height: 120px;
           }
         }
       `}</style>
